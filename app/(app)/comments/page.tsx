@@ -1,10 +1,10 @@
-import { Suspense } from "react";
+import { Suspense } from 'react';
 
-import Loading from "@/app/loading";
-import CommentList from "@/components/comments/CommentList";
-import { getComments } from "@/lib/api/comments/queries";
-import { getEvents } from "@/lib/api/events/queries";
-import { checkAuth } from "@/lib/auth/utils";
+import Loading from '@/app/loading';
+import CommentList from '@/components/comments/CommentList';
+import { getComments } from '@/lib/api/comments/queries';
+import { getEvents } from '@/lib/api/events/queries';
+import { checkAuth } from '@/lib/auth/utils';
 
 export const revalidate = 0;
 

@@ -1,11 +1,11 @@
-"use server";
+'use server';
 
-import { revalidatePath } from "next/cache";
+import { revalidatePath } from 'next/cache';
 import {
   createMention,
   deleteMention,
   updateMention,
-} from "@/lib/api/mentions/mutations";
+} from '@/lib/api/mentions/mutations';
 import {
   MentionId,
   NewMentionParams,
@@ -13,19 +13,19 @@ import {
   mentionIdSchema,
   insertMentionParams,
   updateMentionParams,
-} from "@/lib/db/schema/mentions";
+} from '@/lib/db/schema/mentions';
 
 const handleErrors = (e: unknown) => {
-  const errMsg = "Error, please try again.";
+  const errMsg = 'Error, please try again.';
   if (e instanceof Error) return e.message.length > 0 ? e.message : errMsg;
-  if (e && typeof e === "object" && "error" in e) {
+  if (e && typeof e === 'object' && 'error' in e) {
     const errAsStr = e.error as string;
     return errAsStr.length > 0 ? errAsStr : errMsg;
   }
   return errMsg;
 };
 
-const revalidateMentions = () => revalidatePath("/mentions");
+const revalidateMentions = () => revalidatePath('/mentions');
 
 export const createMentionAction = async (input: NewMentionParams) => {
   try {

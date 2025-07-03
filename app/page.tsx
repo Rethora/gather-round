@@ -3,8 +3,8 @@
  * @see https://v0.dev/t/PmwTvNfrVgf
  * Documentation: https://v0.dev/docs#integrating-generated-code-into-your-nextjs-app
  */
-import Link from "next/link";
-import { SVGProps } from "react";
+import Link from 'next/link';
+import { SVGProps } from 'react';
 
 export default function LandingPage() {
   return (

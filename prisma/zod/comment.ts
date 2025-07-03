@@ -1,5 +1,12 @@
-import * as z from "zod"
-import { CompleteEvent, relatedEventSchema, CompleteMention, relatedMentionSchema, CompleteNotification, relatedNotificationSchema } from "./index"
+import * as z from 'zod';
+import {
+  CompleteEvent,
+  relatedEventSchema,
+  CompleteMention,
+  relatedMentionSchema,
+  CompleteNotification,
+  relatedNotificationSchema,
+} from './index';
 
 export const commentSchema = z.object({
   id: z.string(),
@@ -8,12 +15,12 @@ export const commentSchema = z.object({
   userId: z.string(),
   createdAt: z.date(),
   updatedAt: z.date(),
-})
+});
 
 export interface CompleteComment extends z.infer<typeof commentSchema> {
-  event: CompleteEvent
-  mentions: CompleteMention[]
-  Notification: CompleteNotification[]
+  event: CompleteEvent;
+  mentions: CompleteMention[];
+  Notification: CompleteNotification[];
 }
 
 /**
@@ -21,8 +28,10 @@ export interface CompleteComment extends z.infer<typeof commentSchema> {
  *
  * NOTE: Lazy required in case of potential circular dependencies within schema
  */
-export const relatedCommentSchema: z.ZodSchema<CompleteComment> = z.lazy(() => commentSchema.extend({
-  event: relatedEventSchema,
-  mentions: relatedMentionSchema.array(),
-  Notification: relatedNotificationSchema.array(),
-}))
+export const relatedCommentSchema: z.ZodSchema<CompleteComment> = z.lazy(() =>
+  commentSchema.extend({
+    event: relatedEventSchema,
+    mentions: relatedMentionSchema.array(),
+    Notification: relatedNotificationSchema.array(),
+  })
+);

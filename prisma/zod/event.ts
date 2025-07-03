@@ -1,5 +1,12 @@
-import * as z from "zod"
-import { CompleteRsvp, relatedRsvpSchema, CompleteComment, relatedCommentSchema, CompleteNotification, relatedNotificationSchema } from "./index"
+import * as z from 'zod';
+import {
+  CompleteRsvp,
+  relatedRsvpSchema,
+  CompleteComment,
+  relatedCommentSchema,
+  CompleteNotification,
+  relatedNotificationSchema,
+} from './index';
 
 export const eventSchema = z.object({
   id: z.string(),
@@ -14,12 +21,12 @@ export const eventSchema = z.object({
   userId: z.string(),
   createdAt: z.date(),
   updatedAt: z.date(),
-})
+});
 
 export interface CompleteEvent extends z.infer<typeof eventSchema> {
-  rsvps: CompleteRsvp[]
-  comments: CompleteComment[]
-  Notification: CompleteNotification[]
+  rsvps: CompleteRsvp[];
+  comments: CompleteComment[];
+  Notification: CompleteNotification[];
 }
 
 /**
@@ -27,8 +34,10 @@ export interface CompleteEvent extends z.infer<typeof eventSchema> {
  *
  * NOTE: Lazy required in case of potential circular dependencies within schema
  */
-export const relatedEventSchema: z.ZodSchema<CompleteEvent> = z.lazy(() => eventSchema.extend({
-  rsvps: relatedRsvpSchema.array(),
-  comments: relatedCommentSchema.array(),
-  Notification: relatedNotificationSchema.array(),
-}))
+export const relatedEventSchema: z.ZodSchema<CompleteEvent> = z.lazy(() =>
+  eventSchema.extend({
+    rsvps: relatedRsvpSchema.array(),
+    comments: relatedCommentSchema.array(),
+    Notification: relatedNotificationSchema.array(),
+  })
+);

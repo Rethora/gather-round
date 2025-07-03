@@ -1,14 +1,13 @@
-import { Suspense } from "react";
-import { notFound } from "next/navigation";
+import { Suspense } from 'react';
+import { notFound } from 'next/navigation';
 
-import { getMentionById } from "@/lib/api/mentions/queries";
-import { getComments } from "@/lib/api/comments/queries";import OptimisticMention from "@/app/(app)/mentions/[mentionId]/OptimisticMention";
-import { checkAuth } from "@/lib/auth/utils";
+import { getMentionById } from '@/lib/api/mentions/queries';
+import { getComments } from '@/lib/api/comments/queries';
+import OptimisticMention from '@/app/(app)/mentions/[mentionId]/OptimisticMention';
+import { checkAuth } from '@/lib/auth/utils';
 
-
-import { BackButton } from "@/components/shared/BackButton";
-import Loading from "@/app/loading";
-
+import { BackButton } from '@/components/shared/BackButton';
+import Loading from '@/app/loading';
 
 export const revalidate = 0;
 
@@ -17,7 +16,6 @@ export default async function MentionPage({
 }: {
   params: { mentionId: string };
 }) {
-
   return (
     <main className="overflow-auto">
       <Mention id={params.mentionId} />

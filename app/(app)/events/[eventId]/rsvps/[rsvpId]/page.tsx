@@ -1,14 +1,13 @@
-import { Suspense } from "react";
-import { notFound } from "next/navigation";
+import { Suspense } from 'react';
+import { notFound } from 'next/navigation';
 
-import { getRsvpById } from "@/lib/api/rsvps/queries";
-import { getEvents } from "@/lib/api/events/queries";import OptimisticRsvp from "@/app/(app)/rsvps/[rsvpId]/OptimisticRsvp";
-import { checkAuth } from "@/lib/auth/utils";
+import { getRsvpById } from '@/lib/api/rsvps/queries';
+import { getEvents } from '@/lib/api/events/queries';
+import OptimisticRsvp from '@/app/(app)/rsvps/[rsvpId]/OptimisticRsvp';
+import { checkAuth } from '@/lib/auth/utils';
 
-
-import { BackButton } from "@/components/shared/BackButton";
-import Loading from "@/app/loading";
-
+import { BackButton } from '@/components/shared/BackButton';
+import Loading from '@/app/loading';
 
 export const revalidate = 0;
 
@@ -17,7 +16,6 @@ export default async function RsvpPage({
 }: {
   params: { rsvpId: string };
 }) {
-
   return (
     <main className="overflow-auto">
       <Rsvp id={params.rsvpId} />
@@ -36,8 +34,7 @@ const Rsvp = async ({ id }: { id: string }) => {
     <Suspense fallback={<Loading />}>
       <div className="relative">
         <BackButton currentResource="rsvps" />
-        <OptimisticRsvp rsvp={rsvp} events={events}
-        eventId={rsvp.eventId} />
+        <OptimisticRsvp rsvp={rsvp} events={events} eventId={rsvp.eventId} />
       </div>
     </Suspense>
   );

@@ -1,10 +1,10 @@
-import { Suspense } from "react";
+import { Suspense } from 'react';
 
-import Loading from "@/app/loading";
-import NotificationList from "@/components/notifications/NotificationList";
-import { getNotifications } from "@/lib/api/notifications/queries";
+import Loading from '@/app/loading';
+import NotificationList from '@/components/notifications/NotificationList';
+import { getNotifications } from '@/lib/api/notifications/queries';
 
-import { checkAuth } from "@/lib/auth/utils";
+import { checkAuth } from '@/lib/auth/utils';
 
 export const revalidate = 0;
 
@@ -25,10 +25,10 @@ const Notifications = async () => {
   await checkAuth();
 
   const { notifications } = await getNotifications();
-  
+
   return (
     <Suspense fallback={<Loading />}>
-      <NotificationList notifications={notifications}  />
+      <NotificationList notifications={notifications} />
     </Suspense>
   );
 };

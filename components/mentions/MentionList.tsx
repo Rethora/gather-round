@@ -1,38 +1,39 @@
-"use client";
+'use client';
 
-import { useState } from "react";
-import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { useState } from 'react';
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 
-import { cn } from "@/lib/utils";
-import { type Mention, CompleteMention } from "@/lib/db/schema/mentions";
-import Modal from "@/components/shared/Modal";
-import { type Comment, type CommentId } from "@/lib/db/schema/comments";
-import { useOptimisticMentions } from "@/app/(app)/mentions/useOptimisticMentions";
-import { Button } from "@/components/ui/button";
-import MentionForm from "./MentionForm";
-import { PlusIcon } from "lucide-react";
+import { cn } from '@/lib/utils';
+import { type Mention, CompleteMention } from '@/lib/db/schema/mentions';
+import Modal from '@/components/shared/Modal';
+import { type Comment, type CommentId } from '@/lib/db/schema/comments';
+import { useOptimisticMentions } from '@/app/(app)/mentions/useOptimisticMentions';
+import { Button } from '@/components/ui/button';
+import MentionForm from './MentionForm';
+import { PlusIcon } from 'lucide-react';
 
 type TOpenModal = (mention?: Mention) => void;
 
 export default function MentionList({
   mentions,
   comments,
-  commentId 
+  commentId,
 }: {
   mentions: CompleteMention[];
   comments: Comment[];
-  commentId?: CommentId 
+  commentId?: CommentId;
 }) {
   const { optimisticMentions, addOptimisticMention } = useOptimisticMentions(
     mentions,
-    comments 
+    comments
   );
   const [open, setOpen] = useState(false);
   const [activeMention, setActiveMention] = useState<Mention | null>(null);
   const openModal = (mention?: Mention) => {
     setOpen(true);
-    mention ? setActiveMention(mention) : setActiveMention(null);
+    if (mention) setActiveMention(mention);
+    else setActiveMention(null);
   };
   const closeModal = () => setOpen(false);
 
@@ -41,7 +42,7 @@ export default function MentionList({
       <Modal
         open={open}
         setOpen={setOpen}
-        title={activeMention ? "Edit Mention" : "Create Mention"}
+        title={activeMention ? 'Edit Mention' : 'Create Mention'}
       >
         <MentionForm
           mention={activeMention}
@@ -49,11 +50,11 @@ export default function MentionList({
           openModal={openModal}
           closeModal={closeModal}
           comments={comments}
-        commentId={commentId}
+          commentId={commentId}
         />
       </Modal>
       <div className="absolute right-0 top-0 ">
-        <Button onClick={() => openModal()} variant={"outline"}>
+        <Button onClick={() => openModal()} variant={'outline'}>
           +
         </Button>
       </div>
@@ -61,12 +62,8 @@ export default function MentionList({
         <EmptyState openModal={openModal} />
       ) : (
         <ul>
-          {optimisticMentions.map((mention) => (
-            <Mention
-              mention={mention}
-              key={mention.id}
-              openModal={openModal}
-            />
+          {optimisticMentions.map(mention => (
+            <Mention mention={mention} key={mention.id} openModal={openModal} />
           ))}
         </ul>
       )}
@@ -76,35 +73,32 @@ export default function MentionList({
 
 const Mention = ({
   mention,
-  openModal,
+  openModal: _,
 }: {
   mention: CompleteMention;
   openModal: TOpenModal;
 }) => {
-  const optimistic = mention.id === "optimistic";
-  const deleting = mention.id === "delete";
+  const optimistic = mention.id === 'optimistic';
+  const deleting = mention.id === 'delete';
   const mutating = optimistic || deleting;
   const pathname = usePathname();
-  const basePath = pathname.includes("mentions")
+  const basePath = pathname.includes('mentions')
     ? pathname
-    : pathname + "/mentions/";
-
+    : pathname + '/mentions/';
 
   return (
     <li
       className={cn(
-        "flex justify-between my-2",
-        mutating ? "opacity-30 animate-pulse" : "",
-        deleting ? "text-destructive" : "",
+        'flex justify-between my-2',
+        mutating ? 'opacity-30 animate-pulse' : '',
+        deleting ? 'text-destructive' : ''
       )}
     >
       <div className="w-full">
-        <div>{mention.mentionedUser}</div>
+        <div>{mention.mentionedUserId}</div>
       </div>
-      <Button variant={"link"} asChild>
-        <Link href={ basePath + "/" + mention.id }>
-          Edit
-        </Link>
+      <Button variant={'link'} asChild>
+        <Link href={basePath + '/' + mention.id}>Edit</Link>
       </Button>
     </li>
   );
@@ -121,7 +115,8 @@ const EmptyState = ({ openModal }: { openModal: TOpenModal }) => {
       </p>
       <div className="mt-6">
         <Button onClick={() => openModal()}>
-          <PlusIcon className="h-4" /> New Mentions </Button>
+          <PlusIcon className="h-4" /> New Mentions{' '}
+        </Button>
       </div>
     </div>
   );

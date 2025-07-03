@@ -1,36 +1,37 @@
-"use client";
+'use client';
 
-import { useState } from "react";
-import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { useState } from 'react';
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 
-import { cn } from "@/lib/utils";
-import { type Notification, CompleteNotification } from "@/lib/db/schema/notifications";
-import Modal from "@/components/shared/Modal";
+import { cn } from '@/lib/utils';
+import {
+  type Notification,
+  CompleteNotification,
+} from '@/lib/db/schema/notifications';
+import Modal from '@/components/shared/Modal';
 
-import { useOptimisticNotifications } from "@/app/(app)/notifications/useOptimisticNotifications";
-import { Button } from "@/components/ui/button";
-import NotificationForm from "./NotificationForm";
-import { PlusIcon } from "lucide-react";
+import { useOptimisticNotifications } from '@/app/(app)/notifications/useOptimisticNotifications';
+import { Button } from '@/components/ui/button';
+import NotificationForm from './NotificationForm';
+import { PlusIcon } from 'lucide-react';
 
 type TOpenModal = (notification?: Notification) => void;
 
 export default function NotificationList({
   notifications,
-   
 }: {
   notifications: CompleteNotification[];
-   
 }) {
-  const { optimisticNotifications, addOptimisticNotification } = useOptimisticNotifications(
-    notifications,
-     
-  );
+  const { optimisticNotifications, addOptimisticNotification } =
+    useOptimisticNotifications(notifications);
   const [open, setOpen] = useState(false);
-  const [activeNotification, setActiveNotification] = useState<Notification | null>(null);
+  const [activeNotification, setActiveNotification] =
+    useState<Notification | null>(null);
   const openModal = (notification?: Notification) => {
     setOpen(true);
-    notification ? setActiveNotification(notification) : setActiveNotification(null);
+    if (notification) setActiveNotification(notification);
+    else setActiveNotification(null);
   };
   const closeModal = () => setOpen(false);
 
@@ -39,18 +40,17 @@ export default function NotificationList({
       <Modal
         open={open}
         setOpen={setOpen}
-        title={activeNotification ? "Edit Notification" : "Create Notification"}
+        title={activeNotification ? 'Edit Notification' : 'Create Notification'}
       >
         <NotificationForm
           notification={activeNotification}
           addOptimistic={addOptimisticNotification}
           openModal={openModal}
           closeModal={closeModal}
-          
         />
       </Modal>
       <div className="absolute right-0 top-0 ">
-        <Button onClick={() => openModal()} variant={"outline"}>
+        <Button onClick={() => openModal()} variant={'outline'}>
           +
         </Button>
       </div>
@@ -58,7 +58,7 @@ export default function NotificationList({
         <EmptyState openModal={openModal} />
       ) : (
         <ul>
-          {optimisticNotifications.map((notification) => (
+          {optimisticNotifications.map(notification => (
             <Notification
               notification={notification}
               key={notification.id}
@@ -73,35 +73,32 @@ export default function NotificationList({
 
 const Notification = ({
   notification,
-  openModal,
+  openModal: _,
 }: {
   notification: CompleteNotification;
   openModal: TOpenModal;
 }) => {
-  const optimistic = notification.id === "optimistic";
-  const deleting = notification.id === "delete";
+  const optimistic = notification.id === 'optimistic';
+  const deleting = notification.id === 'delete';
   const mutating = optimistic || deleting;
   const pathname = usePathname();
-  const basePath = pathname.includes("notifications")
+  const basePath = pathname.includes('notifications')
     ? pathname
-    : pathname + "/notifications/";
-
+    : pathname + '/notifications/';
 
   return (
     <li
       className={cn(
-        "flex justify-between my-2",
-        mutating ? "opacity-30 animate-pulse" : "",
-        deleting ? "text-destructive" : "",
+        'flex justify-between my-2',
+        mutating ? 'opacity-30 animate-pulse' : '',
+        deleting ? 'text-destructive' : ''
       )}
     >
       <div className="w-full">
         <div>{notification.type}</div>
       </div>
-      <Button variant={"link"} asChild>
-        <Link href={ basePath + "/" + notification.id }>
-          Edit
-        </Link>
+      <Button variant={'link'} asChild>
+        <Link href={basePath + '/' + notification.id}>Edit</Link>
       </Button>
     </li>
   );
@@ -118,7 +115,8 @@ const EmptyState = ({ openModal }: { openModal: TOpenModal }) => {
       </p>
       <div className="mt-6">
         <Button onClick={() => openModal()}>
-          <PlusIcon className="h-4" /> New Notifications </Button>
+          <PlusIcon className="h-4" /> New Notifications{' '}
+        </Button>
       </div>
     </div>
   );

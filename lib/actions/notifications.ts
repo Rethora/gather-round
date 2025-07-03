@@ -1,11 +1,11 @@
-"use server";
+'use server';
 
-import { revalidatePath } from "next/cache";
+import { revalidatePath } from 'next/cache';
 import {
   createNotification,
   deleteNotification,
   updateNotification,
-} from "@/lib/api/notifications/mutations";
+} from '@/lib/api/notifications/mutations';
 import {
   NotificationId,
   NewNotificationParams,
@@ -13,21 +13,23 @@ import {
   notificationIdSchema,
   insertNotificationParams,
   updateNotificationParams,
-} from "@/lib/db/schema/notifications";
+} from '@/lib/db/schema/notifications';
 
 const handleErrors = (e: unknown) => {
-  const errMsg = "Error, please try again.";
+  const errMsg = 'Error, please try again.';
   if (e instanceof Error) return e.message.length > 0 ? e.message : errMsg;
-  if (e && typeof e === "object" && "error" in e) {
+  if (e && typeof e === 'object' && 'error' in e) {
     const errAsStr = e.error as string;
     return errAsStr.length > 0 ? errAsStr : errMsg;
   }
   return errMsg;
 };
 
-const revalidateNotifications = () => revalidatePath("/notifications");
+const revalidateNotifications = () => revalidatePath('/notifications');
 
-export const createNotificationAction = async (input: NewNotificationParams) => {
+export const createNotificationAction = async (
+  input: NewNotificationParams
+) => {
   try {
     const payload = insertNotificationParams.parse(input);
     await createNotification(payload);
@@ -37,7 +39,9 @@ export const createNotificationAction = async (input: NewNotificationParams) => 
   }
 };
 
-export const updateNotificationAction = async (input: UpdateNotificationParams) => {
+export const updateNotificationAction = async (
+  input: UpdateNotificationParams
+) => {
   try {
     const payload = updateNotificationParams.parse(input);
     await updateNotification(payload.id, payload);

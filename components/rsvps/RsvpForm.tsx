@@ -1,18 +1,18 @@
-import { z } from "zod";
+import { z } from 'zod';
 
-import { useState, useTransition } from "react";
-import { useFormStatus } from "react-dom";
-import { useRouter } from "next/navigation";
-import { toast } from "sonner";
-import { useValidatedForm } from "@/lib/hooks/useValidatedForm";
+import { useState, useTransition } from 'react';
+import { useFormStatus } from 'react-dom';
+import { useRouter } from 'next/navigation';
+import { toast } from 'sonner';
+import { useValidatedForm } from '@/lib/hooks/useValidatedForm';
 
-import { type Action, cn } from "@/lib/utils";
-import { type TAddOptimistic } from "@/app/(app)/rsvps/useOptimisticRsvps";
+import { type Action, cn } from '@/lib/utils';
+import { type TAddOptimistic } from '@/app/(app)/rsvps/useOptimisticRsvps';
 
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
-import { useBackPath } from "@/components/shared/BackButton";
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { Label } from '@/components/ui/label';
+import { useBackPath } from '@/components/shared/BackButton';
 
 import {
   Select,
@@ -20,15 +20,15 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
+} from '@/components/ui/select';
 
-import { type Rsvp, insertRsvpParams } from "@/lib/db/schema/rsvps";
+import { type Rsvp, insertRsvpParams } from '@/lib/db/schema/rsvps';
 import {
   createRsvpAction,
   deleteRsvpAction,
   updateRsvpAction,
-} from "@/lib/actions/rsvps";
-import { type Event, type EventId } from "@/lib/db/schema/events";
+} from '@/lib/actions/rsvps';
+import { type Event, type EventId } from '@/lib/db/schema/events';
 
 const RsvpForm = ({
   events,
@@ -55,7 +55,7 @@ const RsvpForm = ({
   const [pending, startMutation] = useTransition();
 
   const router = useRouter();
-  const backpath = useBackPath("rsvps");
+  const backpath = useBackPath('rsvps');
 
   const onSuccess = (
     action: Action,
@@ -63,15 +63,15 @@ const RsvpForm = ({
   ) => {
     const failed = Boolean(data?.error);
     if (failed) {
-      openModal && openModal(data?.values);
+      if (openModal) openModal(data?.values);
       toast.error(`Failed to ${action}`, {
-        description: data?.error ?? "Error",
+        description: data?.error ?? 'Error',
       });
     } else {
       router.refresh();
-      postSuccess && postSuccess();
+      if (postSuccess) postSuccess();
       toast.success(`Rsvp ${action}d!`);
-      if (action === "delete") router.push(backpath);
+      if (action === 'delete') router.push(backpath);
     }
   };
 
@@ -88,21 +88,21 @@ const RsvpForm = ({
       return;
     }
 
-    closeModal && closeModal();
+    if (closeModal) closeModal();
     const values = rsvpParsed.data;
     const pendingRsvp: Rsvp = {
       updatedAt: rsvp?.updatedAt ?? new Date(),
       createdAt: rsvp?.createdAt ?? new Date(),
-      id: rsvp?.id ?? "",
-      userId: rsvp?.userId ?? "",
+      id: rsvp?.id ?? '',
+      userId: rsvp?.userId ?? '',
       ...values,
     };
     try {
       startMutation(async () => {
-        addOptimistic &&
+        if (addOptimistic)
           addOptimistic({
             data: pendingRsvp,
-            action: editing ? "update" : "create",
+            action: editing ? 'update' : 'create',
           });
 
         const error = editing
@@ -110,11 +110,11 @@ const RsvpForm = ({
           : await createRsvpAction(values);
 
         const errorFormatted = {
-          error: error ?? "Error",
+          error: error ?? 'Error',
           values: pendingRsvp,
         };
         onSuccess(
-          editing ? "update" : "create",
+          editing ? 'update' : 'create',
           error ? errorFormatted : undefined
         );
       });
@@ -126,13 +126,13 @@ const RsvpForm = ({
   };
 
   return (
-    <form action={handleSubmit} onChange={handleChange} className={"space-y-8"}>
+    <form action={handleSubmit} onChange={handleChange} className={'space-y-8'}>
       {/* Schema fields start */}
       <div>
         <Label
           className={cn(
-            "mb-2 inline-block",
-            errors?.inviteeId ? "text-destructive" : ""
+            'mb-2 inline-block',
+            errors?.inviteeId ? 'text-destructive' : ''
           )}
         >
           Invitee
@@ -140,8 +140,8 @@ const RsvpForm = ({
         <Input
           type="text"
           name="inviteeId"
-          className={cn(errors?.inviteeId ? "ring ring-destructive" : "")}
-          defaultValue={rsvp?.inviteeId ?? ""}
+          className={cn(errors?.inviteeId ? 'ring ring-destructive' : '')}
+          defaultValue={rsvp?.inviteeId ?? ''}
         />
         {errors?.inviteeId ? (
           <p className="text-xs text-destructive mt-2">{errors.inviteeId[0]}</p>
@@ -154,20 +154,20 @@ const RsvpForm = ({
         <div>
           <Label
             className={cn(
-              "mb-2 inline-block",
-              errors?.eventId ? "text-destructive" : ""
+              'mb-2 inline-block',
+              errors?.eventId ? 'text-destructive' : ''
             )}
           >
             Event
           </Label>
           <Select defaultValue={rsvp?.eventId} name="eventId">
             <SelectTrigger
-              className={cn(errors?.eventId ? "ring ring-destructive" : "")}
+              className={cn(errors?.eventId ? 'ring ring-destructive' : '')}
             >
               <SelectValue placeholder="Select a event" />
             </SelectTrigger>
             <SelectContent>
-              {events?.map((event) => (
+              {events?.map(event => (
                 <SelectItem key={event.id} value={event.id.toString()}>
                   {event.id}
                   {/* TODO: Replace with a field from the event model */}
@@ -192,24 +192,25 @@ const RsvpForm = ({
         <Button
           type="button"
           disabled={isDeleting || pending || hasErrors}
-          variant={"destructive"}
+          variant={'destructive'}
           onClick={() => {
             setIsDeleting(true);
-            closeModal && closeModal();
+            if (closeModal) closeModal();
             startMutation(async () => {
-              addOptimistic && addOptimistic({ action: "delete", data: rsvp });
+              if (addOptimistic)
+                addOptimistic({ action: 'delete', data: rsvp });
               const error = await deleteRsvpAction(rsvp.id);
               setIsDeleting(false);
               const errorFormatted = {
-                error: error ?? "Error",
+                error: error ?? 'Error',
                 values: rsvp,
               };
 
-              onSuccess("delete", error ? errorFormatted : undefined);
+              onSuccess('delete', error ? errorFormatted : undefined);
             });
           }}
         >
-          Delet{isDeleting ? "ing..." : "e"}
+          Delet{isDeleting ? 'ing...' : 'e'}
         </Button>
       ) : null}
     </form>
@@ -222,7 +223,7 @@ const SaveButton = ({
   editing,
   errors,
 }: {
-  editing: Boolean;
+  editing: boolean;
   errors: boolean;
 }) => {
   const { pending } = useFormStatus();
@@ -236,8 +237,8 @@ const SaveButton = ({
       aria-disabled={isCreating || isUpdating || errors}
     >
       {editing
-        ? `Sav${isUpdating ? "ing..." : "e"}`
-        : `Creat${isCreating ? "ing..." : "e"}`}
+        ? `Sav${isUpdating ? 'ing...' : 'e'}`
+        : `Creat${isCreating ? 'ing...' : 'e'}`}
     </Button>
   );
 };

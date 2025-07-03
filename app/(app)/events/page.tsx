@@ -1,10 +1,10 @@
-import { Suspense } from "react";
+import { Suspense } from 'react';
 
-import Loading from "@/app/loading";
-import EventList from "@/components/events/EventList";
-import { getEvents } from "@/lib/api/events/queries";
+import Loading from '@/app/loading';
+import EventList from '@/components/events/EventList';
+import { getEvents } from '@/lib/api/events/queries';
 
-import { checkAuth } from "@/lib/auth/utils";
+import { checkAuth } from '@/lib/auth/utils';
 
 export const revalidate = 0;
 
@@ -25,10 +25,10 @@ const Events = async () => {
   await checkAuth();
 
   const { events } = await getEvents();
-  
+
   return (
     <Suspense fallback={<Loading />}>
-      <EventList events={events}  />
+      <EventList events={events} />
     </Suspense>
   );
 };

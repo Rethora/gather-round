@@ -1,5 +1,5 @@
-import * as z from "zod"
-import { CompleteComment, relatedCommentSchema } from "./index"
+import * as z from 'zod';
+import { CompleteComment, relatedCommentSchema } from './index';
 
 export const mentionSchema = z.object({
   id: z.string(),
@@ -7,10 +7,10 @@ export const mentionSchema = z.object({
   commentId: z.string(),
   userId: z.string(),
   createdAt: z.date(),
-})
+});
 
 export interface CompleteMention extends z.infer<typeof mentionSchema> {
-  comment: CompleteComment
+  comment: CompleteComment;
 }
 
 /**
@@ -18,6 +18,8 @@ export interface CompleteMention extends z.infer<typeof mentionSchema> {
  *
  * NOTE: Lazy required in case of potential circular dependencies within schema
  */
-export const relatedMentionSchema: z.ZodSchema<CompleteMention> = z.lazy(() => mentionSchema.extend({
-  comment: relatedCommentSchema,
-}))
+export const relatedMentionSchema: z.ZodSchema<CompleteMention> = z.lazy(() =>
+  mentionSchema.extend({
+    comment: relatedCommentSchema,
+  })
+);

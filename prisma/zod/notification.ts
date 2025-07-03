@@ -1,6 +1,11 @@
-import * as z from "zod"
-import { NotificationType } from "@prisma/client"
-import { CompleteEvent, relatedEventSchema, CompleteComment, relatedCommentSchema } from "./index"
+import * as z from 'zod';
+import { NotificationType } from '@prisma/client';
+import {
+  CompleteEvent,
+  relatedEventSchema,
+  CompleteComment,
+  relatedCommentSchema,
+} from './index';
 
 export const notificationSchema = z.object({
   id: z.string(),
@@ -12,11 +17,12 @@ export const notificationSchema = z.object({
   relatedCommentId: z.string().nullish(),
   userId: z.string(),
   createdAt: z.date(),
-})
+});
 
-export interface CompleteNotification extends z.infer<typeof notificationSchema> {
-  relatedEvent?: CompleteEvent | null
-  relatedComment?: CompleteComment | null
+export interface CompleteNotification
+  extends z.infer<typeof notificationSchema> {
+  relatedEvent?: CompleteEvent | null;
+  relatedComment?: CompleteComment | null;
 }
 
 /**
@@ -24,7 +30,10 @@ export interface CompleteNotification extends z.infer<typeof notificationSchema>
  *
  * NOTE: Lazy required in case of potential circular dependencies within schema
  */
-export const relatedNotificationSchema: z.ZodSchema<CompleteNotification> = z.lazy(() => notificationSchema.extend({
-  relatedEvent: relatedEventSchema.nullish(),
-  relatedComment: relatedCommentSchema.nullish(),
-}))
+export const relatedNotificationSchema: z.ZodSchema<CompleteNotification> =
+  z.lazy(() =>
+    notificationSchema.extend({
+      relatedEvent: relatedEventSchema.nullish(),
+      relatedComment: relatedCommentSchema.nullish(),
+    })
+  );

@@ -1,24 +1,24 @@
-"use client";
+'use client';
 
-import { useOptimistic, useState } from "react";
-import { TAddOptimistic } from "@/app/(app)/comments/useOptimisticComments";
-import { type Comment } from "@/lib/db/schema/comments";
-import { cn } from "@/lib/utils";
+import { useOptimistic, useState } from 'react';
+import { TAddOptimistic } from '@/app/(app)/comments/useOptimisticComments';
+import { type Comment } from '@/lib/db/schema/comments';
+import { cn } from '@/lib/utils';
 
-import { Button } from "@/components/ui/button";
-import Modal from "@/components/shared/Modal";
-import CommentForm from "@/components/comments/CommentForm";
-import { type Event, type EventId } from "@/lib/db/schema/events";
+import { Button } from '@/components/ui/button';
+import Modal from '@/components/shared/Modal';
+import CommentForm from '@/components/comments/CommentForm';
+import { type Event, type EventId } from '@/lib/db/schema/events';
 
-export default function OptimisticComment({ 
+export default function OptimisticComment({
   comment,
   events,
-  eventId 
-}: { 
-  comment: Comment; 
-  
+  eventId,
+}: {
+  comment: Comment;
+
   events: Event[];
-  eventId?: EventId
+  eventId?: EventId;
 }) {
   const [open, setOpen] = useState(false);
   const openModal = (_?: Comment) => {
@@ -26,7 +26,7 @@ export default function OptimisticComment({
   };
   const closeModal = () => setOpen(false);
   const [optimisticComment, setOptimisticComment] = useOptimistic(comment);
-  const updateComment: TAddOptimistic = (input) =>
+  const updateComment: TAddOptimistic = input =>
     setOptimisticComment({ ...input.data });
 
   return (
@@ -35,7 +35,7 @@ export default function OptimisticComment({
         <CommentForm
           comment={optimisticComment}
           events={events}
-        eventId={eventId}
+          eventId={eventId}
           closeModal={closeModal}
           openModal={openModal}
           addOptimistic={updateComment}
@@ -49,8 +49,8 @@ export default function OptimisticComment({
       </div>
       <pre
         className={cn(
-          "bg-secondary p-4 rounded-lg break-all text-wrap",
-          optimisticComment.id === "optimistic" ? "animate-pulse" : "",
+          'bg-secondary p-4 rounded-lg break-all text-wrap',
+          optimisticComment.id === 'optimistic' ? 'animate-pulse' : ''
         )}
       >
         {JSON.stringify(optimisticComment, null, 2)}

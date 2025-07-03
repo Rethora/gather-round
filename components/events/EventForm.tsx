@@ -1,37 +1,38 @@
-import { z } from "zod";
+import { z } from 'zod';
 
-import { useState, useTransition } from "react";
-import { useFormStatus } from "react-dom";
-import { useRouter } from "next/navigation";
-import { toast } from "sonner";
-import { useValidatedForm } from "@/lib/hooks/useValidatedForm";
+import { useState, useTransition } from 'react';
+import { useFormStatus } from 'react-dom';
+import { useRouter } from 'next/navigation';
+import { toast } from 'sonner';
+import { useValidatedForm } from '@/lib/hooks/useValidatedForm';
 
-import { type Action, cn } from "@/lib/utils";
-import { type TAddOptimistic } from "@/app/(app)/events/useOptimisticEvents";
+import { type Action, cn } from '@/lib/utils';
+import { type TAddOptimistic } from '@/app/(app)/events/useOptimisticEvents';
 
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
-import { useBackPath } from "@/components/shared/BackButton";
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { Label } from '@/components/ui/label';
+import { useBackPath } from '@/components/shared/BackButton';
 
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
+import { CalendarIcon } from 'lucide-react';
+import { Calendar } from '@/components/ui/calendar';
+import { format } from 'date-fns';
 
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { CalendarIcon } from "lucide-react";
-import { Calendar } from "@/components/ui/calendar";
-import { format } from "date-fns";
+import { Checkbox } from '@/components/ui/checkbox';
 
-import { Checkbox } from "@/components/ui/checkbox"
-
-import { type Event, insertEventParams } from "@/lib/db/schema/events";
+import { type Event, insertEventParams } from '@/lib/db/schema/events';
 import {
   createEventAction,
   deleteEventAction,
   updateEventAction,
-} from "@/lib/actions/events";
-
+} from '@/lib/actions/events';
 
 const EventForm = ({
-  
   event,
   openModal,
   closeModal,
@@ -39,7 +40,7 @@ const EventForm = ({
   postSuccess,
 }: {
   event?: Event | null;
-  
+
   openModal?: (event?: Event) => void;
   closeModal?: () => void;
   addOptimistic?: TAddOptimistic;
@@ -48,32 +49,29 @@ const EventForm = ({
   const { errors, hasErrors, setErrors, handleChange } =
     useValidatedForm<Event>(insertEventParams);
   const editing = !!event?.id;
-    const [dateTime, setDateTime] = useState<Date | undefined>(
-    event?.dateTime,
-  );
+  const [dateTime, setDateTime] = useState<Date | undefined>(event?.dateTime);
 
   const [isDeleting, setIsDeleting] = useState(false);
   const [pending, startMutation] = useTransition();
 
   const router = useRouter();
-  const backpath = useBackPath("events");
-
+  const backpath = useBackPath('events');
 
   const onSuccess = (
     action: Action,
-    data?: { error: string; values: Event },
+    data?: { error: string; values: Event }
   ) => {
     const failed = Boolean(data?.error);
     if (failed) {
-      openModal && openModal(data?.values);
+      if (openModal) openModal(data?.values);
       toast.error(`Failed to ${action}`, {
-        description: data?.error ?? "Error",
+        description: data?.error ?? 'Error',
       });
     } else {
       router.refresh();
-      postSuccess && postSuccess();
+      if (postSuccess) postSuccess();
       toast.success(`Event ${action}d!`);
-      if (action === "delete") router.push(backpath);
+      if (action === 'delete') router.push(backpath);
     }
   };
 
@@ -81,39 +79,40 @@ const EventForm = ({
     setErrors(null);
 
     const payload = Object.fromEntries(data.entries());
-    const eventParsed = await insertEventParams.safeParseAsync({  ...payload });
+    const eventParsed = await insertEventParams.safeParseAsync({ ...payload });
     if (!eventParsed.success) {
       setErrors(eventParsed?.error.flatten().fieldErrors);
       return;
     }
 
-    closeModal && closeModal();
+    if (closeModal) closeModal();
     const values = eventParsed.data;
     const pendingEvent: Event = {
       updatedAt: event?.updatedAt ?? new Date(),
       createdAt: event?.createdAt ?? new Date(),
-      id: event?.id ?? "",
-      userId: event?.userId ?? "",
+      id: event?.id ?? '',
+      userId: event?.userId ?? '',
       ...values,
     };
     try {
       startMutation(async () => {
-        addOptimistic && addOptimistic({
-          data: pendingEvent,
-          action: editing ? "update" : "create",
-        });
+        if (addOptimistic)
+          addOptimistic({
+            data: pendingEvent,
+            action: editing ? 'update' : 'create',
+          });
 
         const error = editing
           ? await updateEventAction({ ...values, id: event.id })
           : await createEventAction(values);
 
         const errorFormatted = {
-          error: error ?? "Error",
-          values: pendingEvent 
+          error: error ?? 'Error',
+          values: pendingEvent,
         };
         onSuccess(
-          editing ? "update" : "create",
-          error ? errorFormatted : undefined,
+          editing ? 'update' : 'create',
+          error ? errorFormatted : undefined
         );
       });
     } catch (e) {
@@ -124,13 +123,13 @@ const EventForm = ({
   };
 
   return (
-    <form action={handleSubmit} onChange={handleChange} className={"space-y-8"}>
+    <form action={handleSubmit} onChange={handleChange} className={'space-y-8'}>
       {/* Schema fields start */}
-              <div>
+      <div>
         <Label
           className={cn(
-            "mb-2 inline-block",
-            errors?.title ? "text-destructive" : "",
+            'mb-2 inline-block',
+            errors?.title ? 'text-destructive' : ''
           )}
         >
           Title
@@ -138,8 +137,8 @@ const EventForm = ({
         <Input
           type="text"
           name="title"
-          className={cn(errors?.title ? "ring ring-destructive" : "")}
-          defaultValue={event?.title ?? ""}
+          className={cn(errors?.title ? 'ring ring-destructive' : '')}
+          defaultValue={event?.title ?? ''}
         />
         {errors?.title ? (
           <p className="text-xs text-destructive mt-2">{errors.title[0]}</p>
@@ -147,11 +146,11 @@ const EventForm = ({
           <div className="h-6" />
         )}
       </div>
-        <div>
+      <div>
         <Label
           className={cn(
-            "mb-2 inline-block",
-            errors?.description ? "text-destructive" : "",
+            'mb-2 inline-block',
+            errors?.description ? 'text-destructive' : ''
           )}
         >
           Description
@@ -159,20 +158,22 @@ const EventForm = ({
         <Input
           type="text"
           name="description"
-          className={cn(errors?.description ? "ring ring-destructive" : "")}
-          defaultValue={event?.description ?? ""}
+          className={cn(errors?.description ? 'ring ring-destructive' : '')}
+          defaultValue={event?.description ?? ''}
         />
         {errors?.description ? (
-          <p className="text-xs text-destructive mt-2">{errors.description[0]}</p>
+          <p className="text-xs text-destructive mt-2">
+            {errors.description[0]}
+          </p>
         ) : (
           <div className="h-6" />
         )}
       </div>
-<div>
+      <div>
         <Label
           className={cn(
-            "mb-2 inline-block",
-            errors?.dateTime ? "text-destructive" : "",
+            'mb-2 inline-block',
+            errors?.dateTime ? 'text-destructive' : ''
           )}
         >
           Date Time
@@ -189,14 +190,14 @@ const EventForm = ({
 
           <PopoverTrigger asChild>
             <Button
-              variant={"outline"}
+              variant={'outline'}
               className={cn(
-                "w-[240px] pl-3 text-left font-normal",
-                !event?.dateTime && "text-muted-foreground",
+                'w-[240px] pl-3 text-left font-normal',
+                !event?.dateTime && 'text-muted-foreground'
               )}
             >
               {dateTime ? (
-                <span>{format(dateTime, "PPP")}</span>
+                <span>{format(dateTime, 'PPP')}</span>
               ) : (
                 <span>Pick a date</span>
               )}
@@ -206,10 +207,10 @@ const EventForm = ({
           <PopoverContent className="w-auto p-0" align="start">
             <Calendar
               mode="single"
-              onSelect={(e) => setDateTime(e)}
+              onSelect={e => setDateTime(e)}
               selected={dateTime}
-              disabled={(date) =>
-                date > new Date() || date < new Date("1900-01-01")
+              disabled={date =>
+                date > new Date() || date < new Date('1900-01-01')
               }
               initialFocus
             />
@@ -221,11 +222,11 @@ const EventForm = ({
           <div className="h-6" />
         )}
       </div>
-        <div>
+      <div>
         <Label
           className={cn(
-            "mb-2 inline-block",
-            errors?.location ? "text-destructive" : "",
+            'mb-2 inline-block',
+            errors?.location ? 'text-destructive' : ''
           )}
         >
           Location
@@ -233,8 +234,8 @@ const EventForm = ({
         <Input
           type="text"
           name="location"
-          className={cn(errors?.location ? "ring ring-destructive" : "")}
-          defaultValue={event?.location ?? ""}
+          className={cn(errors?.location ? 'ring ring-destructive' : '')}
+          defaultValue={event?.location ?? ''}
         />
         {errors?.location ? (
           <p className="text-xs text-destructive mt-2">{errors.location[0]}</p>
@@ -242,11 +243,11 @@ const EventForm = ({
           <div className="h-6" />
         )}
       </div>
-        <div>
+      <div>
         <Label
           className={cn(
-            "mb-2 inline-block",
-            errors?.maxGuests ? "text-destructive" : "",
+            'mb-2 inline-block',
+            errors?.maxGuests ? 'text-destructive' : ''
           )}
         >
           Max Guests
@@ -254,8 +255,8 @@ const EventForm = ({
         <Input
           type="text"
           name="maxGuests"
-          className={cn(errors?.maxGuests ? "ring ring-destructive" : "")}
-          defaultValue={event?.maxGuests ?? ""}
+          className={cn(errors?.maxGuests ? 'ring ring-destructive' : '')}
+          defaultValue={event?.maxGuests ?? ''}
         />
         {errors?.maxGuests ? (
           <p className="text-xs text-destructive mt-2">{errors.maxGuests[0]}</p>
@@ -263,11 +264,11 @@ const EventForm = ({
           <div className="h-6" />
         )}
       </div>
-        <div>
+      <div>
         <Label
           className={cn(
-            "mb-2 inline-block",
-            errors?.imageUrl ? "text-destructive" : "",
+            'mb-2 inline-block',
+            errors?.imageUrl ? 'text-destructive' : ''
           )}
         >
           Image Url
@@ -275,8 +276,8 @@ const EventForm = ({
         <Input
           type="text"
           name="imageUrl"
-          className={cn(errors?.imageUrl ? "ring ring-destructive" : "")}
-          defaultValue={event?.imageUrl ?? ""}
+          className={cn(errors?.imageUrl ? 'ring ring-destructive' : '')}
+          defaultValue={event?.imageUrl ?? ''}
         />
         {errors?.imageUrl ? (
           <p className="text-xs text-destructive mt-2">{errors.imageUrl[0]}</p>
@@ -284,36 +285,46 @@ const EventForm = ({
           <div className="h-6" />
         )}
       </div>
-<div>
+      <div>
         <Label
           className={cn(
-            "mb-2 inline-block",
-            errors?.isPrivate ? "text-destructive" : "",
+            'mb-2 inline-block',
+            errors?.isPrivate ? 'text-destructive' : ''
           )}
         >
           Is Private
         </Label>
         <br />
-        <Checkbox defaultChecked={event?.isPrivate} name={'isPrivate'} className={cn(errors?.isPrivate ? "ring ring-destructive" : "")} />
+        <Checkbox
+          defaultChecked={event?.isPrivate}
+          name={'isPrivate'}
+          className={cn(errors?.isPrivate ? 'ring ring-destructive' : '')}
+        />
         {errors?.isPrivate ? (
           <p className="text-xs text-destructive mt-2">{errors.isPrivate[0]}</p>
         ) : (
           <div className="h-6" />
         )}
       </div>
-<div>
+      <div>
         <Label
           className={cn(
-            "mb-2 inline-block",
-            errors?.isCanceled ? "text-destructive" : "",
+            'mb-2 inline-block',
+            errors?.isCanceled ? 'text-destructive' : ''
           )}
         >
           Is Canceled
         </Label>
         <br />
-        <Checkbox defaultChecked={event?.isCanceled} name={'isCanceled'} className={cn(errors?.isCanceled ? "ring ring-destructive" : "")} />
+        <Checkbox
+          defaultChecked={event?.isCanceled}
+          name={'isCanceled'}
+          className={cn(errors?.isCanceled ? 'ring ring-destructive' : '')}
+        />
         {errors?.isCanceled ? (
-          <p className="text-xs text-destructive mt-2">{errors.isCanceled[0]}</p>
+          <p className="text-xs text-destructive mt-2">
+            {errors.isCanceled[0]}
+          </p>
         ) : (
           <div className="h-6" />
         )}
@@ -328,24 +339,25 @@ const EventForm = ({
         <Button
           type="button"
           disabled={isDeleting || pending || hasErrors}
-          variant={"destructive"}
+          variant={'destructive'}
           onClick={() => {
             setIsDeleting(true);
-            closeModal && closeModal();
+            if (closeModal) closeModal();
             startMutation(async () => {
-              addOptimistic && addOptimistic({ action: "delete", data: event });
+              if (addOptimistic)
+                addOptimistic({ action: 'delete', data: event });
               const error = await deleteEventAction(event.id);
               setIsDeleting(false);
               const errorFormatted = {
-                error: error ?? "Error",
+                error: error ?? 'Error',
                 values: event,
               };
 
-              onSuccess("delete", error ? errorFormatted : undefined);
+              onSuccess('delete', error ? errorFormatted : undefined);
             });
           }}
         >
-          Delet{isDeleting ? "ing..." : "e"}
+          Delet{isDeleting ? 'ing...' : 'e'}
         </Button>
       ) : null}
     </form>
@@ -358,7 +370,7 @@ const SaveButton = ({
   editing,
   errors,
 }: {
-  editing: Boolean;
+  editing: boolean;
   errors: boolean;
 }) => {
   const { pending } = useFormStatus();
@@ -372,8 +384,8 @@ const SaveButton = ({
       aria-disabled={isCreating || isUpdating || errors}
     >
       {editing
-        ? `Sav${isUpdating ? "ing..." : "e"}`
-        : `Creat${isCreating ? "ing..." : "e"}`}
+        ? `Sav${isUpdating ? 'ing...' : 'e'}`
+        : `Creat${isCreating ? 'ing...' : 'e'}`}
     </Button>
   );
 };

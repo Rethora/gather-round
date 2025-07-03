@@ -1,19 +1,19 @@
-"use client";
+'use client';
 
-import Link from "next/link";
-import { useFormState } from "react-dom";
-import { useFormStatus } from "react-dom";
+import Link from 'next/link';
+import { useFormState } from 'react-dom';
+import { useFormStatus } from 'react-dom';
 
-import { signInAction } from "@/lib/actions/users";
+import { signInAction } from '@/lib/actions/users';
 
-import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import AuthFormError from "@/components/auth/AuthFormError";
+import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import AuthFormError from '@/components/auth/AuthFormError';
 
 export default function SignInPage() {
   const [state, formAction] = useFormState(signInAction, {
-    error: "",
+    error: '',
   });
 
   return (
@@ -36,7 +36,7 @@ export default function SignInPage() {
         <SubmitButton />
       </form>
       <div className="mt-4 text-sm text-center text-muted-foreground">
-        Don&apos;t have an account yet?{" "}
+        Don&apos;t have an account yet?{' '}
         <Link
           href="/sign-up"
           className="text-accent-foreground underline hover:text-primary"
@@ -52,7 +52,7 @@ const SubmitButton = () => {
   const { pending } = useFormStatus();
   return (
     <Button className="w-full" type="submit" disabled={pending}>
-      Sign{pending ? "ing" : ""} in
+      Sign{pending ? 'ing' : ''} in
     </Button>
   );
 };

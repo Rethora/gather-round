@@ -1,6 +1,11 @@
-import * as z from "zod"
-import { RsvpStatus } from "@prisma/client"
-import { CompleteEvent, relatedEventSchema, CompleteUser, relatedUserSchema } from "./index"
+import * as z from 'zod';
+import { RsvpStatus } from '@prisma/client';
+import {
+  CompleteEvent,
+  relatedEventSchema,
+  CompleteUser,
+  relatedUserSchema,
+} from './index';
 
 export const rsvpSchema = z.object({
   id: z.string(),
@@ -10,11 +15,11 @@ export const rsvpSchema = z.object({
   inviteeId: z.string(),
   createdAt: z.date(),
   updatedAt: z.date(),
-})
+});
 
 export interface CompleteRsvp extends z.infer<typeof rsvpSchema> {
-  event: CompleteEvent
-  invitee: CompleteUser
+  event: CompleteEvent;
+  invitee: CompleteUser;
 }
 
 /**
@@ -22,7 +27,9 @@ export interface CompleteRsvp extends z.infer<typeof rsvpSchema> {
  *
  * NOTE: Lazy required in case of potential circular dependencies within schema
  */
-export const relatedRsvpSchema: z.ZodSchema<CompleteRsvp> = z.lazy(() => rsvpSchema.extend({
-  event: relatedEventSchema,
-  invitee: relatedUserSchema,
-}))
+export const relatedRsvpSchema: z.ZodSchema<CompleteRsvp> = z.lazy(() =>
+  rsvpSchema.extend({
+    event: relatedEventSchema,
+    invitee: relatedUserSchema,
+  })
+);

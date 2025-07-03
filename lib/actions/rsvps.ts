@@ -1,11 +1,7 @@
-"use server";
+'use server';
 
-import { revalidatePath } from "next/cache";
-import {
-  createRsvp,
-  deleteRsvp,
-  updateRsvp,
-} from "@/lib/api/rsvps/mutations";
+import { revalidatePath } from 'next/cache';
+import { createRsvp, deleteRsvp, updateRsvp } from '@/lib/api/rsvps/mutations';
 import {
   RsvpId,
   NewRsvpParams,
@@ -13,19 +9,19 @@ import {
   rsvpIdSchema,
   insertRsvpParams,
   updateRsvpParams,
-} from "@/lib/db/schema/rsvps";
+} from '@/lib/db/schema/rsvps';
 
 const handleErrors = (e: unknown) => {
-  const errMsg = "Error, please try again.";
+  const errMsg = 'Error, please try again.';
   if (e instanceof Error) return e.message.length > 0 ? e.message : errMsg;
-  if (e && typeof e === "object" && "error" in e) {
+  if (e && typeof e === 'object' && 'error' in e) {
     const errAsStr = e.error as string;
     return errAsStr.length > 0 ? errAsStr : errMsg;
   }
   return errMsg;
 };
 
-const revalidateRsvps = () => revalidatePath("/rsvps");
+const revalidateRsvps = () => revalidatePath('/rsvps');
 
 export const createRsvpAction = async (input: NewRsvpParams) => {
   try {

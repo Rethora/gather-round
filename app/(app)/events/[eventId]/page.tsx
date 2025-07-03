@@ -1,14 +1,14 @@
-import { Suspense } from "react";
-import { notFound } from "next/navigation";
+import { Suspense } from 'react';
+import { notFound } from 'next/navigation';
 
-import { getEventByIdWithRsvpsAndComments } from "@/lib/api/events/queries";
-import OptimisticEvent from "./OptimisticEvent";
-import { checkAuth, getUserAuth } from "@/lib/auth/utils";
-import RsvpList from "@/components/rsvps/RsvpList";
-import CommentList from "@/components/comments/CommentList";
+import { getEventByIdWithRsvpsAndComments } from '@/lib/api/events/queries';
+import OptimisticEvent from './OptimisticEvent';
+import { checkAuth, getUserAuth } from '@/lib/auth/utils';
+import RsvpList from '@/components/rsvps/RsvpList';
+import CommentList from '@/components/comments/CommentList';
 
-import { BackButton } from "@/components/shared/BackButton";
-import Loading from "@/app/loading";
+import { BackButton } from '@/components/shared/BackButton';
+import Loading from '@/app/loading';
 
 export const revalidate = 0;
 
