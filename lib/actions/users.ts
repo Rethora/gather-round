@@ -15,7 +15,8 @@ import {
   getUserAuth,
 } from '../auth/utils';
 
-import { updateUserSchema } from '../db/schema/auth';
+import { updateUserSchema } from '@/lib/db/schema/auth';
+import { getUsersByPartialEmail } from '@/lib/api/users/queries';
 
 interface ActionResult {
   error: string;
@@ -132,3 +133,14 @@ export async function updateUser(
     return genericError;
   }
 }
+
+export const lookupUsersByPartialEmail = async (partialEmail: string) => {
+  const { session } = await getUserAuth();
+  if (!session) return [];
+  return (await getUsersByPartialEmail(partialEmail))
+    .filter(user => user.id !== session.user.id)
+    .map(user => ({
+      id: user.id,
+      email: user.email,
+    }));
+};

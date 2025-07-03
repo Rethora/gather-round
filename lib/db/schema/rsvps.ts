@@ -16,6 +16,14 @@ export const insertRsvpParams = baseSchema
     userId: true,
   });
 
+// New schema for creating multiple RSVPs
+export const insertMultipleRsvpsParams = z.object({
+  eventId: z.coerce.string().min(1),
+  inviteeIds: z
+    .array(z.string().min(1))
+    .min(1, 'At least one invitee is required'),
+});
+
 export const updateRsvpSchema = baseSchema;
 export const updateRsvpParams = updateRsvpSchema
   .extend({
@@ -30,6 +38,7 @@ export const rsvpIdSchema = baseSchema.pick({ id: true });
 export type Rsvp = z.infer<typeof rsvpSchema>;
 export type NewRsvp = z.infer<typeof insertRsvpSchema>;
 export type NewRsvpParams = z.infer<typeof insertRsvpParams>;
+export type NewMultipleRsvpsParams = z.infer<typeof insertMultipleRsvpsParams>;
 export type UpdateRsvpParams = z.infer<typeof updateRsvpParams>;
 export type RsvpId = z.infer<typeof rsvpIdSchema>['id'];
 

@@ -9,10 +9,10 @@ import { useValidatedForm } from '@/lib/hooks/useValidatedForm';
 import { type Action, cn } from '@/lib/utils';
 import { type TAddOptimistic } from '@/app/(app)/rsvps/useOptimisticRsvps';
 
-import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { useBackPath } from '@/components/shared/BackButton';
+import { useDebouncedCallback } from 'use-debounce';
 
 import {
   Select,
@@ -27,8 +27,11 @@ import {
   createRsvpAction,
   deleteRsvpAction,
   updateRsvpAction,
+  createMultipleRsvpsAction,
 } from '@/lib/actions/rsvps';
 import { type Event, type EventId } from '@/lib/db/schema/events';
+import { lookupUsersByPartialEmail } from '@/lib/actions/users';
+import { ComboBox } from '@/components/ui/combo-box';
 
 const RsvpForm = ({
   events,
@@ -54,6 +57,26 @@ const RsvpForm = ({
   const [isDeleting, setIsDeleting] = useState(false);
   const [pending, startMutation] = useTransition();
 
+  // Multi-select ComboBox state
+  const [selectedUsers, setSelectedUsers] = useState<
+    { value: string; label: string }[]
+  >([]);
+  const [userOptions, setUserOptions] = useState<
+    { value: string; label: string }[]
+  >([]);
+
+  // Debounced DB query for user lookup
+  const debouncedLookup = useDebouncedCallback(async (search: string) => {
+    const foundUsers = await lookupUsersByPartialEmail(search);
+    setUserOptions(
+      foundUsers.map(user => ({ value: user.id, label: user.email }))
+    );
+  }, 500);
+
+  const handleInviteeSearch = (search: string) => {
+    debouncedLookup(search);
+  };
+
   const router = useRouter();
   const backpath = useBackPath('rsvps');
 
@@ -78,6 +101,45 @@ const RsvpForm = ({
   const handleSubmit = async (data: FormData) => {
     setErrors(null);
 
+    // If we have selected users, use the multi-RSVP action
+    if (selectedUsers.length > 0) {
+      if (!eventId) {
+        toast.error('Event ID is required');
+        return;
+      }
+
+      if (closeModal) closeModal();
+
+      try {
+        startMutation(async () => {
+          const result = await createMultipleRsvpsAction({
+            eventId: eventId,
+            inviteeIds: selectedUsers.map(user => user.value),
+          });
+
+          if (typeof result === 'string') {
+            // Error occurred
+            toast.error('Failed to create RSVPs', {
+              description: result,
+            });
+          } else {
+            // Success
+            router.refresh();
+            if (postSuccess) postSuccess();
+            toast.success(
+              `Created ${result.count} RSVP${result.count !== 1 ? 's' : ''}!`
+            );
+          }
+        });
+      } catch (e) {
+        if (e instanceof z.ZodError) {
+          setErrors(e.flatten().fieldErrors);
+        }
+      }
+      return;
+    }
+
+    // Original single RSVP logic for backward compatibility
     const payload = Object.fromEntries(data.entries());
     const rsvpParsed = await insertRsvpParams.safeParseAsync({
       eventId,
@@ -135,19 +197,18 @@ const RsvpForm = ({
             errors?.inviteeId ? 'text-destructive' : ''
           )}
         >
-          Invitee
+          Invitees
         </Label>
-        <Input
-          type="text"
-          name="inviteeId"
-          className={cn(errors?.inviteeId ? 'ring ring-destructive' : '')}
-          defaultValue={rsvp?.inviteeId ?? ''}
-        />
-        {errors?.inviteeId ? (
-          <p className="text-xs text-destructive mt-2">{errors.inviteeId[0]}</p>
-        ) : (
-          <div className="h-6" />
-        )}
+        <div>
+          <ComboBox
+            options={userOptions}
+            selectedOptions={selectedUsers}
+            setSelectedOptions={setSelectedUsers}
+            placeholder="Search users..."
+            onSearchChange={handleInviteeSearch}
+          />
+        </div>
+        {/* Optionally render errors here */}
       </div>
 
       {eventId ? null : (
@@ -185,7 +246,12 @@ const RsvpForm = ({
       {/* Schema fields end */}
 
       {/* Save Button */}
-      <SaveButton errors={hasErrors} editing={editing} />
+      <SaveButton
+        errors={hasErrors}
+        editing={editing}
+        hasSelectedUsers={selectedUsers.length > 0}
+        hasEventId={!!eventId}
+      />
 
       {/* Delete Button */}
       {editing ? (
@@ -222,19 +288,28 @@ export default RsvpForm;
 const SaveButton = ({
   editing,
   errors,
+  hasSelectedUsers,
+  hasEventId,
 }: {
   editing: boolean;
   errors: boolean;
+  hasSelectedUsers: boolean;
+  hasEventId: boolean;
 }) => {
   const { pending } = useFormStatus();
   const isCreating = pending && editing === false;
   const isUpdating = pending && editing === true;
+
+  // Disable if we have selected users but no event ID, or if we have errors
+  const isDisabled =
+    isCreating || isUpdating || errors || (hasSelectedUsers && !hasEventId);
+
   return (
     <Button
       type="submit"
       className="mr-2"
-      disabled={isCreating || isUpdating || errors}
-      aria-disabled={isCreating || isUpdating || errors}
+      disabled={isDisabled}
+      aria-disabled={isDisabled}
     >
       {editing
         ? `Sav${isUpdating ? 'ing...' : 'e'}`

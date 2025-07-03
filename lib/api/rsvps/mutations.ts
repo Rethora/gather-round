@@ -3,11 +3,13 @@ import {
   RsvpId,
   NewRsvpParams,
   UpdateRsvpParams,
+  NewMultipleRsvpsParams,
   updateRsvpSchema,
   insertRsvpSchema,
   rsvpIdSchema,
 } from '@/lib/db/schema/rsvps';
 import { getUserAuth } from '@/lib/auth/utils';
+import { RsvpStatus } from '@prisma/client';
 
 export const createRsvp = async (rsvp: NewRsvpParams) => {
   const { session } = await getUserAuth();
@@ -18,6 +20,45 @@ export const createRsvp = async (rsvp: NewRsvpParams) => {
   try {
     const r = await db.rsvp.create({ data: newRsvp });
     return { rsvp: r };
+  } catch (err) {
+    const message = (err as Error).message ?? 'Error, please try again';
+    console.error(message);
+    throw { error: message };
+  }
+};
+
+export const createMultipleRsvps = async (input: NewMultipleRsvpsParams) => {
+  const { session } = await getUserAuth();
+  if (!session?.user.id) {
+    throw { error: 'User not authenticated' };
+  }
+
+  try {
+    // Use a transaction to create all RSVPs atomically
+    const result = await db.$transaction(async tx => {
+      const rsvps = [];
+
+      for (const inviteeId of input.inviteeIds) {
+        // Skip if the user is trying to invite themselves
+        if (inviteeId === session.user.id) {
+          continue;
+        }
+
+        const newRsvp = insertRsvpSchema.parse({
+          eventId: input.eventId,
+          inviteeId: inviteeId,
+          userId: session.user.id,
+          status: RsvpStatus.PENDING,
+        });
+
+        const rsvp = await tx.rsvp.create({ data: newRsvp });
+        rsvps.push(rsvp);
+      }
+
+      return { rsvps };
+    });
+
+    return result;
   } catch (err) {
     const message = (err as Error).message ?? 'Error, please try again';
     console.error(message);

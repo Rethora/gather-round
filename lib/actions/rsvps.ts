@@ -1,14 +1,21 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
-import { createRsvp, deleteRsvp, updateRsvp } from '@/lib/api/rsvps/mutations';
+import {
+  createRsvp,
+  deleteRsvp,
+  updateRsvp,
+  createMultipleRsvps,
+} from '@/lib/api/rsvps/mutations';
 import {
   RsvpId,
   NewRsvpParams,
   UpdateRsvpParams,
+  NewMultipleRsvpsParams,
   rsvpIdSchema,
   insertRsvpParams,
   updateRsvpParams,
+  insertMultipleRsvpsParams,
 } from '@/lib/db/schema/rsvps';
 
 const handleErrors = (e: unknown) => {
@@ -28,6 +35,19 @@ export const createRsvpAction = async (input: NewRsvpParams) => {
     const payload = insertRsvpParams.parse(input);
     await createRsvp(payload);
     revalidateRsvps();
+  } catch (e) {
+    return handleErrors(e);
+  }
+};
+
+export const createMultipleRsvpsAction = async (
+  input: NewMultipleRsvpsParams
+) => {
+  try {
+    const payload = insertMultipleRsvpsParams.parse(input);
+    const result = await createMultipleRsvps(payload);
+    revalidateRsvps();
+    return { success: true, count: result.rsvps.length };
   } catch (e) {
     return handleErrors(e);
   }

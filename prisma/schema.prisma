@@ -22,9 +22,9 @@ datasource db {
 
 enum RsvpStatus {
   PENDING
+  MAYBE
   YES
   NO
-  MA
 }
 
 enum NotificationType {
