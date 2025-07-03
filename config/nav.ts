@@ -22,17 +22,10 @@ export const additionalLinks: AdditionalLinks[] = [
         icon: Globe,
       },
       {
-        href: "/rsvps",
-        title: "Rsvps",
-        icon: Globe,
-      },
-      {
         href: "/events",
         title: "Events",
         icon: Globe,
       },
     ],
   },
-
 ];
-
