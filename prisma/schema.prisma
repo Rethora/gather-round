@@ -7,12 +7,12 @@ generator client {
 
 generator zod {
   provider              = "zod-prisma"
-  output                = "./zod" 
-  relationModel         = true 
-  modelCase             = "camelCase" 
-  modelSuffix           = "Schema" 
-  useDecimalJs          = true 
-  prismaJsonNullability = true 
+  output                = "./zod"
+  relationModel         = true
+  modelCase             = "camelCase"
+  modelSuffix           = "Schema"
+  useDecimalJs          = true
+  prismaJsonNullability = true
 }
 
 datasource db {
@@ -20,6 +20,20 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum RsvpStatus {
+  PENDING
+  YES
+  NO
+  MA
+}
+
+enum NotificationType {
+  EVENT_UPDATE
+  EVENT_CANCELLED
+  NEW_RSVP
+  NEW_MENTION
+  COMMENT
+}
 
 model User {
   id             String    @id
@@ -27,6 +41,7 @@ model User {
   hashedPassword String
   name           String?
   sessions       Session[]
+  Rsvp           Rsvp[]
 }
 
 model Session {
@@ -34,4 +49,80 @@ model Session {
   userId    String
   expiresAt DateTime
   user      User     @relation(references: [id], fields: [userId], onDelete: Cascade)
+}
+
+model Event {
+  id           String         @id @default(cuid())
+  title        String
+  description  String?
+  dateTime     DateTime
+  location     String
+  maxGuests    Int
+  imageUrl     String?
+  isPrivate    Boolean
+  isCanceled   Boolean        @default(false)
+  userId       String
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+  rsvps        Rsvp[]
+  comments     Comment[]
+  Notification Notification[]
+
+  @@index([dateTime, userId])
+}
+
+model Rsvp {
+  id        String     @id @default(cuid())
+  status    RsvpStatus @default(PENDING)
+  event     Event      @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  eventId   String
+  userId    String
+  invitee   User       @relation(fields: [inviteeId], references: [id])
+  inviteeId String
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+
+  @@unique([eventId, inviteeId])
+  @@index([userId])
+}
+
+model Comment {
+  id           String         @id @default(cuid())
+  content      String
+  event        Event          @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  eventId      String
+  userId       String
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+  mentions     Mention[]
+  Notification Notification[]
+
+  @@index([userId])
+}
+
+model Mention {
+  id              String   @id @default(cuid())
+  mentionedUserId String
+  comment         Comment  @relation(fields: [commentId], references: [id], onDelete: Cascade)
+  commentId       String
+  userId          String
+  createdAt       DateTime @default(now())
+
+  @@index([userId])
+}
+
+model Notification {
+  id               String           @id @default(cuid())
+  type             NotificationType
+  title            String
+  message          String
+  isRead           Boolean          @default(false)
+  relatedEvent     Event?           @relation(fields: [relatedEventId], references: [id])
+  relatedEventId   String?
+  relatedComment   Comment?         @relation(fields: [relatedCommentId], references: [id])
+  relatedCommentId String?
+  userId           String
+  createdAt        DateTime         @default(now())
+
+  @@index([userId, createdAt])
 }
