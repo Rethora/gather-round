@@ -40,7 +40,7 @@ export const createMentionAction = async (input: NewMentionParams) => {
     const comment = await getCommentById(payload.commentId);
     createNotificationAction({
       title: NOTIFICATION_TITLES.NEW_MENTION,
-      message: `You have been mentioned by ${user!.name} in a comment`,
+      message: `You have been mentioned by ${user!.name ?? 'Someone'} in a comment`,
       type: NotificationType.NEW_MENTION,
       userId: payload.mentionedUserId,
       commentId: payload.commentId,

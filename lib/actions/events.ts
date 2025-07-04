@@ -56,8 +56,8 @@ export const updateEventAction = async (input: UpdateEventParams) => {
         createNotificationAction({
           userId: user.id,
           eventId: payload.id,
-          type: NotificationType.EVENT_CANCELLED,
-          title: NOTIFICATION_TITLES.EVENT_CANCELLED,
+          type: NotificationType.EVENT_CANCELED,
+          title: NOTIFICATION_TITLES.EVENT_CANCELED,
           message: `The event ${payload.title} has been cancelled`,
         });
       });

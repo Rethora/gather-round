@@ -1,6 +1,5 @@
 'use client';
 
-import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
@@ -9,61 +8,26 @@ import {
   type Notification,
   CompleteNotification,
 } from '@/lib/db/schema/notifications';
-import Modal from '@/components/shared/Modal';
 
 import { useOptimisticNotifications } from '@/app/(app)/notifications/useOptimisticNotifications';
-import { Button } from '@/components/ui/button';
-import NotificationForm from './NotificationForm';
-import { PlusIcon } from 'lucide-react';
-
-type TOpenModal = (notification?: Notification) => void;
+import { Mail, MailOpen } from 'lucide-react';
+import { Card, CardDescription, CardHeader, CardTitle } from '../ui/card';
 
 export default function NotificationList({
   notifications,
 }: {
   notifications: CompleteNotification[];
 }) {
-  const { optimisticNotifications, addOptimisticNotification } =
-    useOptimisticNotifications(notifications);
-  const [open, setOpen] = useState(false);
-  const [activeNotification, setActiveNotification] =
-    useState<Notification | null>(null);
-  const openModal = (notification?: Notification) => {
-    setOpen(true);
-    if (notification) setActiveNotification(notification);
-    else setActiveNotification(null);
-  };
-  const closeModal = () => setOpen(false);
+  const { optimisticNotifications } = useOptimisticNotifications(notifications);
 
   return (
     <div>
-      <Modal
-        open={open}
-        setOpen={setOpen}
-        title={activeNotification ? 'Edit Notification' : 'Create Notification'}
-      >
-        <NotificationForm
-          notification={activeNotification}
-          addOptimistic={addOptimisticNotification}
-          openModal={openModal}
-          closeModal={closeModal}
-        />
-      </Modal>
-      <div className="absolute right-0 top-0 ">
-        <Button onClick={() => openModal()} variant={'outline'}>
-          +
-        </Button>
-      </div>
       {optimisticNotifications.length === 0 ? (
-        <EmptyState openModal={openModal} />
+        <EmptyState />
       ) : (
         <ul>
           {optimisticNotifications.map(notification => (
-            <Notification
-              notification={notification}
-              key={notification.id}
-              openModal={openModal}
-            />
+            <Notification notification={notification} key={notification.id} />
           ))}
         </ul>
       )}
@@ -71,20 +35,64 @@ export default function NotificationList({
   );
 }
 
-const Notification = ({
+const UnReadNotification = ({
   notification,
-  openModal: _,
 }: {
   notification: CompleteNotification;
-  openModal: TOpenModal;
 }) => {
-  const optimistic = notification.id === 'optimistic';
-  const deleting = notification.id === 'delete';
-  const mutating = optimistic || deleting;
   const pathname = usePathname();
   const basePath = pathname.includes('notifications')
     ? pathname
     : pathname + '/notifications/';
+
+  return (
+    <Link href={basePath + '/' + notification.id}>
+      <Card className="bg-muted">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Mail className="h-4 w-4" />
+            {notification.title}
+          </CardTitle>
+          <CardDescription>{notification.message}</CardDescription>
+        </CardHeader>
+      </Card>
+    </Link>
+  );
+};
+
+const ReadNotification = ({
+  notification,
+}: {
+  notification: CompleteNotification;
+}) => {
+  const pathname = usePathname();
+  const basePath = pathname.includes('notifications')
+    ? pathname
+    : pathname + '/notifications/';
+
+  return (
+    <Link href={basePath + '/' + notification.id}>
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <MailOpen className="h-4 w-4" />
+            {notification.title}
+          </CardTitle>
+          <CardDescription>{notification.message}</CardDescription>
+        </CardHeader>
+      </Card>
+    </Link>
+  );
+};
+
+const Notification = ({
+  notification,
+}: {
+  notification: CompleteNotification;
+}) => {
+  const optimistic = notification.id === 'optimistic';
+  const deleting = notification.id === 'delete';
+  const mutating = optimistic || deleting;
 
   return (
     <li
@@ -95,29 +103,25 @@ const Notification = ({
       )}
     >
       <div className="w-full">
-        <div>{notification.type}</div>
+        {notification.isRead ? (
+          <ReadNotification notification={notification} />
+        ) : (
+          <UnReadNotification notification={notification} />
+        )}
       </div>
-      <Button variant={'link'} asChild>
-        <Link href={basePath + '/' + notification.id}>Edit</Link>
-      </Button>
     </li>
   );
 };
 
-const EmptyState = ({ openModal }: { openModal: TOpenModal }) => {
+const EmptyState = () => {
   return (
     <div className="text-center">
       <h3 className="mt-2 text-sm font-semibold text-secondary-foreground">
         No notifications
       </h3>
       <p className="mt-1 text-sm text-muted-foreground">
-        Get started by creating a new notification.
+        You have no notifications at this time.
       </p>
-      <div className="mt-6">
-        <Button onClick={() => openModal()}>
-          <PlusIcon className="h-4" /> New Notifications{' '}
-        </Button>
-      </div>
     </div>
   );
 };

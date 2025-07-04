@@ -3,11 +3,10 @@
 import { useOptimistic, useState } from 'react';
 import { TAddOptimistic } from '@/app/(app)/notifications/useOptimisticNotifications';
 import { type Notification } from '@/lib/db/schema/notifications';
-import { cn } from '@/lib/utils';
 
-import { Button } from '@/components/ui/button';
 import Modal from '@/components/shared/Modal';
 import NotificationForm from '@/components/notifications/NotificationForm';
+import StyledLink from '@/components/StyledLink';
 
 export default function OptimisticNotification({
   notification,
@@ -34,22 +33,28 @@ export default function OptimisticNotification({
           addOptimistic={updateNotification}
         />
       </Modal>
-      <div className="flex justify-between items-end mb-4">
+      <div className="flex flex-col gap-2">
         <h1 className="font-semibold text-2xl">
-          {optimisticNotification.type}
+          {optimisticNotification.title}
         </h1>
-        <Button className="" onClick={() => setOpen(true)}>
-          Edit
-        </Button>
+        <h2 className="text-sm text-muted-foreground">
+          {optimisticNotification.message}
+        </h2>
       </div>
-      <pre
-        className={cn(
-          'bg-secondary p-4 rounded-lg break-all text-wrap',
-          optimisticNotification.id === 'optimistic' ? 'animate-pulse' : ''
-        )}
-      >
-        {JSON.stringify(optimisticNotification, null, 2)}
-      </pre>
+      {optimisticNotification.eventId && (
+        <div className="mt-4">
+          <StyledLink href={`/events/${optimisticNotification.eventId}`}>
+            View Event
+          </StyledLink>
+        </div>
+      )}
+      {optimisticNotification.commentId && (
+        <div className="mt-4">
+          <StyledLink href={`/comments/${optimisticNotification.commentId}`}>
+            View Comment
+          </StyledLink>
+        </div>
+      )}
     </div>
   );
 }

@@ -29,7 +29,7 @@ enum RsvpStatus {
 
 enum NotificationType {
   EVENT_UPDATE
-  EVENT_CANCELLED
+  EVENT_CANCELED
   NEW_RSVP
   NEW_MENTION
   COMMENT

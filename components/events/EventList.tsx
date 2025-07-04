@@ -12,10 +12,17 @@ import { useOptimisticEvents } from '@/app/(app)/events/useOptimisticEvents';
 import { Button } from '@/components/ui/button';
 import EventForm from './EventForm';
 import { PlusIcon } from 'lucide-react';
+import { type Session } from 'lucia';
 
 type TOpenModal = (event?: Event) => void;
 
-export default function EventList({ events }: { events: CompleteEvent[] }) {
+export default function EventList({
+  events,
+  session: _,
+}: {
+  events: CompleteEvent[];
+  session: Session;
+}) {
   const { optimisticEvents, addOptimisticEvent } = useOptimisticEvents(events);
   const [open, setOpen] = useState(false);
   const [activeEvent, setActiveEvent] = useState<Event | null>(null);
