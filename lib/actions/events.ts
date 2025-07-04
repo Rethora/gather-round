@@ -14,6 +14,10 @@ import {
   insertEventParams,
   updateEventParams,
 } from '@/lib/db/schema/events';
+import { getUsersByEventId } from '@/lib/api/users/queries';
+import { NotificationType } from '@prisma/client';
+import { createNotificationAction } from './notifications';
+import { NOTIFICATION_TITLES } from '@/config/notifications';
 
 const handleErrors = (e: unknown) => {
   const errMsg = 'Error, please try again.';
@@ -40,7 +44,35 @@ export const createEventAction = async (input: NewEventParams) => {
 export const updateEventAction = async (input: UpdateEventParams) => {
   try {
     const payload = updateEventParams.parse(input);
+    const users = await getUsersByEventId({
+      eventId: payload.id,
+      excludeHost: true,
+    });
     await updateEvent(payload.id, payload);
+    const { isCanceled } = payload;
+    // * If event is canceled, send notification to all users
+    if (isCanceled) {
+      users.forEach(user => {
+        createNotificationAction({
+          userId: user.id,
+          eventId: payload.id,
+          type: NotificationType.EVENT_CANCELLED,
+          title: NOTIFICATION_TITLES.EVENT_CANCELLED,
+          message: `The event ${payload.title} has been cancelled`,
+        });
+      });
+    } else {
+      // * If event is updated, send notification to all users
+      users.forEach(user => {
+        createNotificationAction({
+          userId: user.id,
+          eventId: payload.id,
+          type: NotificationType.EVENT_UPDATE,
+          title: NOTIFICATION_TITLES.EVENT_UPDATE,
+          message: `The event ${payload.title} has been updated`,
+        });
+      });
+    }
     revalidateEvents();
   } catch (e) {
     return handleErrors(e);

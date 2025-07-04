@@ -12,10 +12,9 @@ import { getUserAuth } from '@/lib/auth/utils';
 export const createNotification = async (
   notification: NewNotificationParams
 ) => {
-  const { session } = await getUserAuth();
   const newNotification = insertNotificationSchema.parse({
     ...notification,
-    userId: session?.user.id,
+    isRead: false,
   });
   try {
     const n = await db.notification.create({ data: newNotification });

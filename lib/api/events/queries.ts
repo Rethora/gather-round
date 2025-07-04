@@ -4,7 +4,17 @@ import { type EventId, eventIdSchema } from '@/lib/db/schema/events';
 
 export const getEvents = async () => {
   const { session } = await getUserAuth();
-  const e = await db.event.findMany({ where: { userId: session?.user.id } });
+  const e = await db.event.findMany({
+    where: {
+      OR: [
+        { userId: session?.user.id },
+        { rsvps: { some: { inviteeId: session?.user.id } } },
+      ],
+    },
+    include: {
+      rsvps: { include: { invitee: true } },
+    },
+  });
   return { events: e };
 };
 
@@ -12,7 +22,13 @@ export const getEventById = async (id: EventId) => {
   const { session } = await getUserAuth();
   const { id: eventId } = eventIdSchema.parse({ id });
   const e = await db.event.findFirst({
-    where: { id: eventId, userId: session?.user.id },
+    where: {
+      id: eventId,
+      OR: [
+        { userId: session?.user.id },
+        { rsvps: { some: { inviteeId: session?.user.id } } },
+      ],
+    },
   });
   return { event: e };
 };
@@ -21,7 +37,13 @@ export const getEventByIdWithRsvpsAndComments = async (id: EventId) => {
   const { session } = await getUserAuth();
   const { id: eventId } = eventIdSchema.parse({ id });
   const e = await db.event.findFirst({
-    where: { id: eventId, userId: session?.user.id },
+    where: {
+      id: eventId,
+      OR: [
+        { userId: session?.user.id },
+        { rsvps: { some: { inviteeId: session?.user.id } } },
+      ],
+    },
     include: {
       rsvps: { include: { event: true } },
       comments: { include: { event: true } },

@@ -13,16 +13,16 @@ export const notificationSchema = z.object({
   title: z.string(),
   message: z.string(),
   isRead: z.boolean(),
-  relatedEventId: z.string().nullish(),
-  relatedCommentId: z.string().nullish(),
+  eventId: z.string().nullish(),
+  commentId: z.string().nullish(),
   userId: z.string(),
   createdAt: z.date(),
 });
 
 export interface CompleteNotification
   extends z.infer<typeof notificationSchema> {
-  relatedEvent?: CompleteEvent | null;
-  relatedComment?: CompleteComment | null;
+  event?: CompleteEvent | null;
+  comment?: CompleteComment | null;
 }
 
 /**
@@ -33,7 +33,7 @@ export interface CompleteNotification
 export const relatedNotificationSchema: z.ZodSchema<CompleteNotification> =
   z.lazy(() =>
     notificationSchema.extend({
-      relatedEvent: relatedEventSchema.nullish(),
-      relatedComment: relatedCommentSchema.nullish(),
+      event: relatedEventSchema.nullish(),
+      comment: relatedCommentSchema.nullish(),
     })
   );

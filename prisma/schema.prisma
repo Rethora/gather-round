@@ -112,17 +112,17 @@ model Mention {
 }
 
 model Notification {
-  id               String           @id @default(cuid())
-  type             NotificationType
-  title            String
-  message          String
-  isRead           Boolean          @default(false)
-  relatedEvent     Event?           @relation(fields: [relatedEventId], references: [id])
-  relatedEventId   String?
-  relatedComment   Comment?         @relation(fields: [relatedCommentId], references: [id])
-  relatedCommentId String?
-  userId           String
-  createdAt        DateTime         @default(now())
+  id        String           @id @default(cuid())
+  type      NotificationType
+  title     String
+  message   String
+  isRead    Boolean          @default(false)
+  event     Event?           @relation(fields: [eventId], references: [id])
+  eventId   String?
+  comment   Comment?         @relation(fields: [commentId], references: [id])
+  commentId String?
+  userId    String
+  createdAt DateTime         @default(now())
 
   @@index([userId, createdAt])
 }

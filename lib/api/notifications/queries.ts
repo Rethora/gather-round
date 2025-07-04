@@ -19,5 +19,12 @@ export const getNotificationById = async (id: NotificationId) => {
   const n = await db.notification.findFirst({
     where: { id: notificationId, userId: session?.user.id },
   });
-  return { notification: n };
+  if (!n) {
+    throw { error: 'Notification not found' };
+  }
+  const updatedNotification = await db.notification.update({
+    where: { id: notificationId, userId: session?.user.id },
+    data: { isRead: true },
+  });
+  return { notification: updatedNotification };
 };

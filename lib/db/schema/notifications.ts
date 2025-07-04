@@ -1,19 +1,19 @@
 import { notificationSchema } from '@/zodAutoGenSchemas';
 import { z } from 'zod';
-import { timestamps } from '@/lib/utils';
 import { getNotifications } from '@/lib/api/notifications/queries';
 
 // Schema for notifications - used to validate API requests
-const baseSchema = notificationSchema.omit(timestamps);
+const baseSchema = notificationSchema.omit({
+  createdAt: true,
+});
 
 export const insertNotificationSchema = baseSchema.omit({ id: true });
 export const insertNotificationParams = baseSchema
   .extend({
-    isRead: z.coerce.boolean(),
+    isRead: z.coerce.boolean().optional(),
   })
   .omit({
     id: true,
-    userId: true,
   });
 
 export const updateNotificationSchema = baseSchema;

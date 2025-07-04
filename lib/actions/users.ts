@@ -144,3 +144,7 @@ export const lookupUsersByPartialEmail = async (partialEmail: string) => {
       email: user.email,
     }));
 };
+
+export const getUserById = async (id: string) => {
+  return await db.user.findUnique({ where: { id } });
+};

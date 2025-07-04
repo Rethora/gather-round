@@ -17,6 +17,10 @@ import {
   updateRsvpParams,
   insertMultipleRsvpsParams,
 } from '@/lib/db/schema/rsvps';
+import { createNotificationAction } from './notifications';
+import { getEventById } from '../api/events/queries';
+import { NotificationType } from '@prisma/client';
+import { NOTIFICATION_TITLES } from '@/config/notifications';
 
 const handleErrors = (e: unknown) => {
   const errMsg = 'Error, please try again.';
@@ -46,6 +50,22 @@ export const createMultipleRsvpsAction = async (
   try {
     const payload = insertMultipleRsvpsParams.parse(input);
     const result = await createMultipleRsvps(payload);
+    const { event } = await getEventById(payload.eventId);
+    result.rsvps.forEach(async rsvp => {
+      try {
+        console.log('user id', rsvp.inviteeId);
+        const notification = await createNotificationAction({
+          title: NOTIFICATION_TITLES.NEW_RSVP,
+          userId: rsvp.inviteeId,
+          eventId: rsvp.eventId,
+          message: `You have been invited to ${event?.title ?? 'an event'}`,
+          type: NotificationType.NEW_RSVP,
+        });
+        console.log('Notification created', notification);
+      } catch (e) {
+        console.error('Error creating notification', e);
+      }
+    });
     revalidateRsvps();
     return { success: true, count: result.rsvps.length };
   } catch (e) {
