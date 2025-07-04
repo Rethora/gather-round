@@ -75,6 +75,16 @@ const CommentForm = ({
     }
   };
 
+  const extractMentions = (text: string) => {
+    const mentionRegex = /@([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/g;
+    const mentions: string[] = [];
+    let match;
+    while ((match = mentionRegex.exec(text)) !== null) {
+      mentions.push(match[1]);
+    }
+    return mentions;
+  };
+
   const handleSubmit = async (data: FormData) => {
     setErrors(null);
 
@@ -90,6 +100,7 @@ const CommentForm = ({
 
     if (closeModal) closeModal();
     const values = commentParsed.data;
+    const mentions = extractMentions(values.content);
     const pendingComment: Comment = {
       updatedAt: comment?.updatedAt ?? new Date(),
       createdAt: comment?.createdAt ?? new Date(),
@@ -107,7 +118,7 @@ const CommentForm = ({
 
         const error = editing
           ? await updateCommentAction({ ...values, id: comment.id })
-          : await createCommentAction(values);
+          : await createCommentAction(values, mentions);
 
         const errorFormatted = {
           error: error ?? 'Error',

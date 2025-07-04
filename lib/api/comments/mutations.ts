@@ -8,11 +8,6 @@ import {
   commentIdSchema,
 } from '@/lib/db/schema/comments';
 import { getUserAuth } from '@/lib/auth/utils';
-import { createNotificationAction } from '@/lib/actions/notifications';
-import { NotificationType } from '@prisma/client';
-import { NOTIFICATION_TITLES } from '@/config/notifications';
-import { getUserById } from '@/lib/actions/users';
-import { getEventById } from '@/lib/api/events/queries';
 
 export const createComment = async (comment: NewCommentParams) => {
   const { session } = await getUserAuth();
@@ -22,15 +17,6 @@ export const createComment = async (comment: NewCommentParams) => {
   });
   try {
     const c = await db.comment.create({ data: newComment });
-    const { event } = await getEventById(c.eventId);
-    const eventHostId = await getUserById(event!.userId);
-    createNotificationAction({
-      userId: eventHostId!.id,
-      eventId: comment.eventId,
-      type: NotificationType.COMMENT,
-      title: NOTIFICATION_TITLES.NEW_COMMENT,
-      message: `${session?.user.name ?? 'Someone'} has commented on your event: ${event!.title}`,
-    });
     return { comment: c };
   } catch (err) {
     const message = (err as Error).message ?? 'Error, please try again';

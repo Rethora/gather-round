@@ -1,10 +1,11 @@
 import { mentionSchema } from '@/zodAutoGenSchemas';
 import { z } from 'zod';
-import { timestamps } from '@/lib/utils';
 import { getMentions } from '@/lib/api/mentions/queries';
 
 // Schema for mentions - used to validate API requests
-const baseSchema = mentionSchema.omit(timestamps);
+const baseSchema = mentionSchema.omit({
+  createdAt: true,
+});
 
 export const insertMentionSchema = baseSchema.omit({ id: true });
 export const insertMentionParams = baseSchema

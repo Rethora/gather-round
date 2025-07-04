@@ -14,6 +14,11 @@ import {
   insertMentionParams,
   updateMentionParams,
 } from '@/lib/db/schema/mentions';
+import { createNotificationAction } from '@/lib/actions/notifications';
+import { getUserById } from '@/lib/actions/users';
+import { getCommentById } from '@/lib/api/comments/queries';
+import { NOTIFICATION_TITLES } from '@/config/notifications';
+import { NotificationType } from '@prisma/client';
 
 const handleErrors = (e: unknown) => {
   const errMsg = 'Error, please try again.';
@@ -31,6 +36,16 @@ export const createMentionAction = async (input: NewMentionParams) => {
   try {
     const payload = insertMentionParams.parse(input);
     await createMention(payload);
+    const user = await getUserById(payload.mentionedUserId);
+    const comment = await getCommentById(payload.commentId);
+    createNotificationAction({
+      title: NOTIFICATION_TITLES.NEW_MENTION,
+      message: `You have been mentioned by ${user!.name} in a comment`,
+      type: NotificationType.NEW_MENTION,
+      userId: payload.mentionedUserId,
+      commentId: payload.commentId,
+      eventId: comment!.comment?.eventId,
+    });
     revalidateMentions();
   } catch (e) {
     return handleErrors(e);

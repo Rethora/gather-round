@@ -79,6 +79,7 @@ const MentionForm = ({
     setErrors(null);
 
     const payload = Object.fromEntries(data.entries());
+    console.log('payload', payload);
     const mentionParsed = await insertMentionParams.safeParseAsync({
       commentId,
       ...payload,
@@ -94,8 +95,6 @@ const MentionForm = ({
       createdAt: mention?.createdAt ?? new Date(),
       id: mention?.id ?? '',
       userId: mention?.userId ?? '',
-      mentionedUserId: mention?.mentionedUserId ?? '',
-      commentId: mention?.commentId ?? '',
       ...values,
     };
     try {
@@ -140,7 +139,7 @@ const MentionForm = ({
         </Label>
         <Input
           type="text"
-          name="mentionedUser"
+          name="mentionedUserId"
           className={cn(errors?.mentionedUserId ? 'ring ring-destructive' : '')}
           defaultValue={mention?.mentionedUserId ?? ''}
         />
