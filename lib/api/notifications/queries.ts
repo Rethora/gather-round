@@ -9,6 +9,7 @@ export const getNotifications = async () => {
   const { session } = await getUserAuth();
   const n = await db.notification.findMany({
     where: { userId: session?.user.id },
+    orderBy: { createdAt: 'desc' },
   });
   return { notifications: n };
 };

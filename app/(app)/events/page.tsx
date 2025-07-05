@@ -13,7 +13,7 @@ export default async function EventsPage() {
     <main>
       <div className="relative">
         <div className="flex justify-between">
-          <h1 className="font-semibold text-2xl my-2">Events</h1>
+          <h1 className="font-semibold text-2xl my-2">My Events</h1>
         </div>
         <Events />
       </div>
@@ -29,7 +29,7 @@ const Events = async () => {
 
   return (
     <Suspense fallback={<Loading />}>
-      <EventList events={events} session={session} />
+      <EventList events={events} session={session!} />
     </Suspense>
   );
 };

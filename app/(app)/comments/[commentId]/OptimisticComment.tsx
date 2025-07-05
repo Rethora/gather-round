@@ -9,16 +9,18 @@ import { Button } from '@/components/ui/button';
 import Modal from '@/components/shared/Modal';
 import CommentForm from '@/components/comments/CommentForm';
 import { type Event, type EventId } from '@/lib/db/schema/events';
+import { type Session } from '@/lib/auth/utils';
 
 export default function OptimisticComment({
   comment,
   events,
   eventId,
+  session,
 }: {
   comment: Comment;
-
   events: Event[];
   eventId?: EventId;
+  session: Session;
 }) {
   const [open, setOpen] = useState(false);
   const openModal = (_?: Comment) => {
@@ -43,9 +45,11 @@ export default function OptimisticComment({
       </Modal>
       <div className="flex justify-between items-end mb-4">
         <h1 className="font-semibold text-2xl">{optimisticComment.content}</h1>
-        <Button className="" onClick={() => setOpen(true)}>
-          Edit
-        </Button>
+        {comment.userId === session.user.id && (
+          <Button className="" onClick={() => setOpen(true)}>
+            Edit
+          </Button>
+        )}
       </div>
       <pre
         className={cn(

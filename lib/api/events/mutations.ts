@@ -59,3 +59,19 @@ export const deleteEvent = async (id: EventId) => {
     throw { error: message };
   }
 };
+
+export const cancelEvent = async (id: EventId) => {
+  const { session } = await getUserAuth();
+  const { id: eventId } = eventIdSchema.parse({ id });
+  try {
+    const e = await db.event.update({
+      where: { id: eventId, userId: session?.user.id },
+      data: { isCanceled: true },
+    });
+    return { event: e };
+  } catch (err) {
+    const message = (err as Error).message ?? 'Error, please try again';
+    console.error(message);
+    throw { error: message };
+  }
+};

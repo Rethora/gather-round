@@ -4,8 +4,7 @@ import { notFound } from 'next/navigation';
 import { getCommentByIdWithMentions } from '@/lib/api/comments/queries';
 import { getEvents } from '@/lib/api/events/queries';
 import OptimisticComment from '@/app/(app)/comments/[commentId]/OptimisticComment';
-import { checkAuth } from '@/lib/auth/utils';
-import MentionList from '@/components/mentions/MentionList';
+import { checkAuth, getUserAuth } from '@/lib/auth/utils';
 
 import { BackButton } from '@/components/shared/BackButton';
 import Loading from '@/app/loading';
@@ -27,8 +26,9 @@ export default async function CommentPage({
 const Comment = async ({ id }: { id: string }) => {
   await checkAuth();
 
-  const { comment, mentions } = await getCommentByIdWithMentions(id);
+  const { comment } = await getCommentByIdWithMentions(id);
   const { events } = await getEvents();
+  const { session } = await getUserAuth();
 
   if (!comment) notFound();
   return (
@@ -39,13 +39,8 @@ const Comment = async ({ id }: { id: string }) => {
           comment={comment}
           events={events}
           eventId={comment.eventId}
+          session={session!}
         />
-      </div>
-      <div className="relative mt-8 mx-4">
-        <h3 className="text-xl font-medium mb-4">
-          {comment.content}&apos;s Mentions
-        </h3>
-        <MentionList comments={[]} commentId={comment.id} mentions={mentions} />
       </div>
     </Suspense>
   );

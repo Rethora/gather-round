@@ -14,6 +14,9 @@ export const getEvents = async () => {
     include: {
       rsvps: { include: { invitee: true } },
     },
+    orderBy: {
+      dateTime: 'asc',
+    },
   });
   return { events: e };
 };
@@ -33,7 +36,9 @@ export const getEventById = async (id: EventId) => {
   return { event: e };
 };
 
-export const getEventByIdWithRsvpsAndComments = async (id: EventId) => {
+export const getEventByIdWithRsvpsWithUsersAndComments = async (
+  id: EventId
+) => {
   const { session } = await getUserAuth();
   const { id: eventId } = eventIdSchema.parse({ id });
   const e = await db.event.findFirst({
@@ -45,7 +50,7 @@ export const getEventByIdWithRsvpsAndComments = async (id: EventId) => {
       ],
     },
     include: {
-      rsvps: { include: { event: true } },
+      rsvps: { include: { event: true, invitee: true } },
       comments: { include: { event: true } },
     },
   });

@@ -75,9 +75,10 @@ export const updateRsvp = async (id: RsvpId, rsvp: UpdateRsvpParams) => {
   });
   try {
     const r = await db.rsvp.update({
-      where: { id: rsvpId, userId: session?.user.id },
+      where: { id: rsvpId, inviteeId: session?.user.id },
       data: newRsvp,
     });
+    console.log('updated rsvp', r);
     return { rsvp: r };
   } catch (err) {
     const message = (err as Error).message ?? 'Error, please try again';

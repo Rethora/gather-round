@@ -53,7 +53,6 @@ export const createMultipleRsvpsAction = async (
     const { event } = await getEventById(payload.eventId);
     result.rsvps.forEach(async rsvp => {
       try {
-        console.log('user id', rsvp.inviteeId);
         const notification = await createNotificationAction({
           title: NOTIFICATION_TITLES.NEW_RSVP,
           userId: rsvp.inviteeId,

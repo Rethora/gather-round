@@ -12,6 +12,7 @@ import { useOptimisticComments } from '@/app/(app)/comments/useOptimisticComment
 import { Button } from '@/components/ui/button';
 import CommentForm from './CommentForm';
 import { PlusIcon } from 'lucide-react';
+import { type Session } from '@/lib/auth/utils';
 
 type TOpenModal = (comment?: Comment) => void;
 
@@ -19,10 +20,12 @@ export default function CommentList({
   comments,
   events,
   eventId,
+  session,
 }: {
   comments: CompleteComment[];
   events: Event[];
   eventId?: EventId;
+  session: Session;
 }) {
   const { optimisticComments, addOptimisticComment } = useOptimisticComments(
     comments,
@@ -63,7 +66,12 @@ export default function CommentList({
       ) : (
         <ul>
           {optimisticComments.map(comment => (
-            <Comment comment={comment} key={comment.id} openModal={openModal} />
+            <Comment
+              comment={comment}
+              key={comment.id}
+              openModal={openModal}
+              session={session}
+            />
           ))}
         </ul>
       )}
@@ -74,9 +82,11 @@ export default function CommentList({
 const Comment = ({
   comment,
   openModal: _,
+  session,
 }: {
   comment: CompleteComment;
   openModal: TOpenModal;
+  session: Session;
 }) => {
   const optimistic = comment.id === 'optimistic';
   const deleting = comment.id === 'delete';
@@ -97,9 +107,11 @@ const Comment = ({
       <div className="w-full">
         <div>{comment.content}</div>
       </div>
-      <Button variant={'link'} asChild>
-        <Link href={basePath + '/' + comment.id}>Edit</Link>
-      </Button>
+      {comment.userId === session.user.id && (
+        <Button variant={'link'} asChild>
+          <Link href={basePath + '/' + comment.id}>Edit</Link>
+        </Button>
+      )}
     </li>
   );
 };

@@ -4,7 +4,7 @@ import Loading from '@/app/loading';
 import CommentList from '@/components/comments/CommentList';
 import { getComments } from '@/lib/api/comments/queries';
 import { getEvents } from '@/lib/api/events/queries';
-import { checkAuth } from '@/lib/auth/utils';
+import { checkAuth, getUserAuth } from '@/lib/auth/utils';
 
 export const revalidate = 0;
 
@@ -26,9 +26,11 @@ const Comments = async () => {
 
   const { comments } = await getComments();
   const { events } = await getEvents();
+  const { session } = await getUserAuth();
+
   return (
     <Suspense fallback={<Loading />}>
-      <CommentList comments={comments} events={events} />
+      <CommentList comments={comments} events={events} session={session!} />
     </Suspense>
   );
 };

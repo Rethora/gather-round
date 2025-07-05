@@ -1,8 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import Link from 'next/link';
-import { usePathname } from 'next/navigation';
 
 import { cn } from '@/lib/utils';
 import { type Rsvp, CompleteRsvp } from '@/lib/db/schema/rsvps';
@@ -12,6 +10,7 @@ import { useOptimisticRsvps } from '@/app/(app)/rsvps/useOptimisticRsvps';
 import { Button } from '@/components/ui/button';
 import RsvpForm from './RsvpForm';
 import { PlusIcon } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
 
 type TOpenModal = (rsvp?: Rsvp) => void;
 
@@ -36,6 +35,7 @@ export default function RsvpList({
     else setActiveRsvp(null);
   };
   const closeModal = () => setOpen(false);
+  const event = events.find(e => e.id === eventId);
 
   return (
     <div>
@@ -53,11 +53,13 @@ export default function RsvpList({
           eventId={eventId}
         />
       </Modal>
-      <div className="absolute right-0 top-0 ">
-        <Button onClick={() => openModal()} variant={'outline'}>
-          +
-        </Button>
-      </div>
+      {!event?.isCanceled && (
+        <div className="absolute right-0 top-0 ">
+          <Button onClick={() => openModal()} variant={'outline'}>
+            +
+          </Button>
+        </div>
+      )}
       {optimisticRsvps.length === 0 ? (
         <EmptyState openModal={openModal} />
       ) : (
@@ -81,8 +83,6 @@ const Rsvp = ({
   const optimistic = rsvp.id === 'optimistic';
   const deleting = rsvp.id === 'delete';
   const mutating = optimistic || deleting;
-  const pathname = usePathname();
-  const basePath = pathname.includes('rsvps') ? pathname : pathname + '/rsvps/';
 
   return (
     <li
@@ -93,11 +93,11 @@ const Rsvp = ({
       )}
     >
       <div className="w-full">
-        <div>{rsvp.status}</div>
+        <div className="flex gap-2">
+          <Badge>{rsvp.status}</Badge>
+          <div>{rsvp.invitee.email}</div>
+        </div>
       </div>
-      <Button variant={'link'} asChild>
-        <Link href={basePath + '/' + rsvp.id}>Edit</Link>
-      </Button>
     </li>
   );
 };
