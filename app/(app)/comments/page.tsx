@@ -5,6 +5,7 @@ import CommentList from '@/components/comments/CommentList';
 import { getComments } from '@/lib/api/comments/queries';
 import { getEvents } from '@/lib/api/events/queries';
 import { checkAuth, getUserAuth } from '@/lib/auth/utils';
+import PollingWrapper from '@/components/shared/PollingWrapper';
 
 export const revalidate = 0;
 
@@ -15,7 +16,9 @@ export default async function CommentsPage() {
         <div className="flex justify-between">
           <h1 className="font-semibold text-2xl my-2">Comments</h1>
         </div>
-        <Comments />
+        <PollingWrapper configKey="comments">
+          <Comments />
+        </PollingWrapper>
       </div>
     </main>
   );

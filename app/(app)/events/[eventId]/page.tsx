@@ -8,6 +8,7 @@ import { checkAuth, getUserAuth } from '@/lib/auth/utils';
 import RsvpList from '@/components/rsvps/RsvpList';
 import RsvpStatusComponent from '@/components/rsvps/RsvpStatus';
 import CommentList from '@/components/comments/CommentList';
+import PollingWrapper from '@/components/shared/PollingWrapper';
 
 import { BackButton } from '@/components/shared/BackButton';
 import Loading from '@/app/loading';
@@ -21,7 +22,9 @@ export default async function EventPage({
 }) {
   return (
     <main className="overflow-auto">
-      <Event id={params.eventId} />
+      <PollingWrapper configKey="events">
+        <Event id={params.eventId} />
+      </PollingWrapper>
     </main>
   );
 }

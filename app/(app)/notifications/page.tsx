@@ -3,6 +3,7 @@ import { Suspense } from 'react';
 import Loading from '@/app/loading';
 import NotificationList from '@/components/notifications/NotificationList';
 import { getNotifications } from '@/lib/api/notifications/queries';
+import PollingWrapper from '@/components/shared/PollingWrapper';
 
 import { checkAuth } from '@/lib/auth/utils';
 
@@ -15,7 +16,9 @@ export default async function NotificationsPage() {
         <div className="flex justify-between">
           <h1 className="font-semibold text-2xl my-2">Notifications</h1>
         </div>
-        <Notifications />
+        <PollingWrapper configKey="notifications">
+          <Notifications />
+        </PollingWrapper>
       </div>
     </main>
   );

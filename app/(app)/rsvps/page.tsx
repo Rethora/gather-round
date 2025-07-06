@@ -5,6 +5,7 @@ import RsvpList from '@/components/rsvps/RsvpList';
 import { getRsvps } from '@/lib/api/rsvps/queries';
 import { getEvents } from '@/lib/api/events/queries';
 import { checkAuth } from '@/lib/auth/utils';
+import PollingWrapper from '@/components/shared/PollingWrapper';
 
 export const revalidate = 0;
 
@@ -15,7 +16,9 @@ export default async function RsvpsPage() {
         <div className="flex justify-between">
           <h1 className="font-semibold text-2xl my-2">Rsvps</h1>
         </div>
-        <Rsvps />
+        <PollingWrapper configKey="rsvps">
+          <Rsvps />
+        </PollingWrapper>
       </div>
     </main>
   );
