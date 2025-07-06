@@ -49,13 +49,47 @@ const EventForm = ({
   const { errors, hasErrors, setErrors, handleChange } =
     useValidatedForm<Event>(insertEventParams);
   const editing = !!event?.id;
+
+  // Initialize dateTime with the event's dateTime or current date/time
   const [dateTime, setDateTime] = useState<Date | undefined>(event?.dateTime);
+
+  // Initialize time string for the time input
+  const [timeString, setTimeString] = useState<string>(
+    event?.dateTime?.toTimeString().slice(0, 5) ?? ''
+  );
 
   const [isDeleting, setIsDeleting] = useState(false);
   const [pending, startMutation] = useTransition();
 
   const router = useRouter();
   const backpath = useBackPath('events');
+
+  // Function to combine date and time
+  const combineDateAndTime = (date: Date, timeString: string): Date => {
+    const [hours, minutes] = timeString.split(':').map(Number);
+    const combined = new Date(date);
+    combined.setHours(hours, minutes, 0, 0);
+    return combined;
+  };
+
+  // Handle date selection
+  const handleDateSelect = (selectedDate: Date | undefined) => {
+    if (selectedDate && timeString) {
+      const combined = combineDateAndTime(selectedDate, timeString);
+      setDateTime(combined);
+    } else if (selectedDate) {
+      setDateTime(selectedDate);
+    }
+  };
+
+  // Handle time change
+  const handleTimeChange = (newTimeString: string) => {
+    setTimeString(newTimeString);
+    if (dateTime && newTimeString) {
+      const combined = combineDateAndTime(dateTime, newTimeString);
+      setDateTime(combined);
+    }
+  };
 
   const onSuccess = (
     action: Action,
@@ -107,7 +141,7 @@ const EventForm = ({
           : await createEventAction(values);
 
         const errorFormatted = {
-          error: error ?? 'Error',
+          error: typeof error === 'string' ? error : 'Error',
           values: pendingEvent,
         };
         onSuccess(
@@ -139,6 +173,7 @@ const EventForm = ({
           name="title"
           className={cn(errors?.title ? 'ring ring-destructive' : '')}
           defaultValue={event?.title ?? ''}
+          required
         />
         {errors?.title ? (
           <p className="text-xs text-destructive mt-2">{errors.title[0]}</p>
@@ -176,46 +211,56 @@ const EventForm = ({
             errors?.dateTime ? 'text-destructive' : ''
           )}
         >
-          Date Time
+          Date & Time
         </Label>
-        <br />
-        <Popover>
-          <Input
-            name="dateTime"
-            onChange={() => {}}
-            readOnly
-            value={dateTime?.toUTCString() ?? new Date().toUTCString()}
-            className="hidden"
-          />
-
-          <PopoverTrigger asChild>
-            <Button
-              variant={'outline'}
-              className={cn(
-                'w-[240px] pl-3 text-left font-normal',
-                !event?.dateTime && 'text-muted-foreground'
-              )}
-            >
-              {dateTime ? (
-                <span>{format(dateTime, 'PPP')}</span>
-              ) : (
-                <span>Pick a date</span>
-              )}
-              <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-            </Button>
-          </PopoverTrigger>
-          <PopoverContent className="w-auto p-0" align="start">
-            <Calendar
-              mode="single"
-              onSelect={e => setDateTime(e)}
-              selected={dateTime}
-              disabled={date =>
-                date > new Date() || date < new Date('1900-01-01')
-              }
-              initialFocus
+        <div className="flex gap-2 items-start">
+          <Popover>
+            <Input
+              name="dateTime"
+              onChange={() => {}}
+              readOnly
+              value={dateTime?.toISOString() ?? new Date().toISOString()}
+              className="hidden"
+              required
             />
-          </PopoverContent>
-        </Popover>
+
+            <PopoverTrigger asChild>
+              <Button
+                variant={'outline'}
+                className={cn(
+                  'w-[200px] pl-3 text-left font-normal',
+                  !dateTime && 'text-muted-foreground'
+                )}
+              >
+                {dateTime ? (
+                  <span>{format(dateTime, 'PPP')}</span>
+                ) : (
+                  <span>Pick a date</span>
+                )}
+                <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0" align="start">
+              <Calendar
+                mode="single"
+                onSelect={handleDateSelect}
+                selected={dateTime}
+                disabled={date => date < new Date('1900-01-01')}
+                required
+              />
+            </PopoverContent>
+          </Popover>
+
+          <div className="flex items-center gap-2">
+            <Input
+              type="time"
+              value={timeString}
+              onChange={e => handleTimeChange(e.target.value)}
+              className="w-[120px]"
+              required
+            />
+          </div>
+        </div>
         {errors?.dateTime ? (
           <p className="text-xs text-destructive mt-2">{errors.dateTime[0]}</p>
         ) : (
@@ -236,6 +281,7 @@ const EventForm = ({
           name="location"
           className={cn(errors?.location ? 'ring ring-destructive' : '')}
           defaultValue={event?.location ?? ''}
+          required
         />
         {errors?.location ? (
           <p className="text-xs text-destructive mt-2">{errors.location[0]}</p>
@@ -257,6 +303,7 @@ const EventForm = ({
           name="maxGuests"
           className={cn(errors?.maxGuests ? 'ring ring-destructive' : '')}
           defaultValue={event?.maxGuests ?? ''}
+          required
         />
         {errors?.maxGuests ? (
           <p className="text-xs text-destructive mt-2">{errors.maxGuests[0]}</p>
@@ -306,29 +353,6 @@ const EventForm = ({
           <div className="h-6" />
         )}
       </div>
-      <div>
-        <Label
-          className={cn(
-            'mb-2 inline-block',
-            errors?.isCanceled ? 'text-destructive' : ''
-          )}
-        >
-          Is Canceled
-        </Label>
-        <br />
-        <Checkbox
-          defaultChecked={event?.isCanceled}
-          name={'isCanceled'}
-          className={cn(errors?.isCanceled ? 'ring ring-destructive' : '')}
-        />
-        {errors?.isCanceled ? (
-          <p className="text-xs text-destructive mt-2">
-            {errors.isCanceled[0]}
-          </p>
-        ) : (
-          <div className="h-6" />
-        )}
-      </div>
       {/* Schema fields end */}
 
       {/* Save Button */}
@@ -349,7 +373,7 @@ const EventForm = ({
               const error = await deleteEventAction(event.id);
               setIsDeleting(false);
               const errorFormatted = {
-                error: error ?? 'Error',
+                error: typeof error === 'string' ? error : 'Error',
                 values: event,
               };
 
