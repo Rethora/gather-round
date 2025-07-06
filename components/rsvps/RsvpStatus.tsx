@@ -172,7 +172,8 @@ export default function RsvpStatusComponent({
             {currentStatus !== 'YES' && (
               <Button
                 onClick={() => handleStatusUpdate('YES')}
-                className="bg-green-600 hover:bg-green-700"
+                variant="outline"
+                className="border-green-300 text-green-700 hover:bg-green-500"
                 disabled={isUpdating}
               >
                 <CheckCircle className="w-4 h-4 mr-2" />
@@ -183,18 +184,18 @@ export default function RsvpStatusComponent({
               <Button
                 onClick={() => handleStatusUpdate('MAYBE')}
                 variant="outline"
-                className="border-blue-300 text-blue-700 hover:bg-blue-50"
+                className="border-blue-300 text-blue-700 hover:bg-blue-500"
                 disabled={isUpdating}
               >
                 <HelpCircle className="w-4 h-4 mr-2" />
-                {isUpdating ? 'Checking...' : 'Maybe'}
+                {isUpdating ? 'Checking...' : 'Maybe, I might be there'}
               </Button>
             )}
             {currentStatus !== 'NO' && (
               <Button
                 onClick={() => handleStatusUpdate('NO')}
                 variant="outline"
-                className="border-red-300 text-red-700 hover:bg-red-50"
+                className="border-red-300 text-red-700 hover:bg-red-500"
                 disabled={isUpdating}
               >
                 <XCircle className="w-4 h-4 mr-2" />

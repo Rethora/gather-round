@@ -1,17 +1,17 @@
 'use client';
 
 import { useState } from 'react';
-import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { formatDistanceToNow } from 'date-fns';
 
 import { cn } from '@/lib/utils';
 import { type Comment, CompleteComment } from '@/lib/db/schema/comments';
 import Modal from '@/components/shared/Modal';
 import { type Event, type EventId } from '@/lib/db/schema/events';
-import { useOptimisticComments } from '@/app/(app)/comments/useOptimisticComments';
+import { useOptimisticComments } from '@/lib/hooks/useOptimisticComments';
 import { Button } from '@/components/ui/button';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import CommentForm from './CommentForm';
-import { PlusIcon } from 'lucide-react';
+import { PencilIcon, PlusIcon, UserIcon } from 'lucide-react';
 import { type Session } from '@/lib/auth/utils';
 
 type TOpenModal = (comment?: Comment) => void;
@@ -21,11 +21,13 @@ export default function CommentList({
   events,
   eventId,
   session,
+  openModal: externalOpenModal,
 }: {
   comments: CompleteComment[];
   events: Event[];
   eventId?: EventId;
   session: Session;
+  openModal?: TOpenModal;
 }) {
   const { optimisticComments, addOptimisticComment } = useOptimisticComments(
     comments,
@@ -33,11 +35,16 @@ export default function CommentList({
   );
   const [open, setOpen] = useState(false);
   const [activeComment, setActiveComment] = useState<Comment | null>(null);
-  const openModal = (comment?: Comment) => {
-    setOpen(true);
-    if (comment) setActiveComment(comment);
-    else setActiveComment(null);
-  };
+
+  // Use external openModal if provided, otherwise use internal state
+  const openModal =
+    externalOpenModal ||
+    ((comment?: Comment) => {
+      setOpen(true);
+      if (comment) setActiveComment(comment);
+      else setActiveComment(null);
+    });
+
   const closeModal = () => setOpen(false);
 
   return (
@@ -64,7 +71,7 @@ export default function CommentList({
       {optimisticComments.length === 0 ? (
         <EmptyState openModal={openModal} />
       ) : (
-        <ul>
+        <div className="space-y-4">
           {optimisticComments.map(comment => (
             <Comment
               comment={comment}
@@ -73,7 +80,7 @@ export default function CommentList({
               session={session}
             />
           ))}
-        </ul>
+        </div>
       )}
     </div>
   );
@@ -81,7 +88,7 @@ export default function CommentList({
 
 const Comment = ({
   comment,
-  openModal: _,
+  openModal,
   session,
 }: {
   comment: CompleteComment;
@@ -91,45 +98,81 @@ const Comment = ({
   const optimistic = comment.id === 'optimistic';
   const deleting = comment.id === 'delete';
   const mutating = optimistic || deleting;
-  const pathname = usePathname();
-  const basePath = pathname.includes('comments')
-    ? pathname
-    : pathname + '/comments/';
+
+  const isCurrentUser = comment.userId === session.user.id;
+  const userName = isCurrentUser
+    ? session.user.name || 'You'
+    : 'Anonymous User';
+  const userInitials =
+    userName === 'You' ? 'Y' : userName.charAt(0).toUpperCase();
 
   return (
-    <li
+    <div
       className={cn(
-        'flex justify-between my-2',
+        'rounded-lg border bg-card p-4 shadow-sm',
         mutating ? 'opacity-30 animate-pulse' : '',
-        deleting ? 'text-destructive' : ''
+        deleting ? 'border-destructive bg-destructive/5' : ''
       )}
     >
-      <div className="w-full">
-        <div>{comment.content}</div>
+      <div className="flex items-start gap-3">
+        <Avatar className="h-8 w-8">
+          <AvatarFallback className="text-xs font-medium">
+            {userInitials}
+          </AvatarFallback>
+        </Avatar>
+
+        <div className="flex-1 space-y-2">
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-medium text-foreground">
+              {userName}
+            </span>
+            <span className="text-xs text-muted-foreground">
+              {formatDistanceToNow(new Date(comment.createdAt), {
+                addSuffix: true,
+              })}
+            </span>
+          </div>
+
+          <p className="text-sm text-foreground leading-relaxed">
+            {comment.content}
+          </p>
+        </div>
+
+        <div>
+          {isCurrentUser && (
+            <div>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="rounded-full"
+                onClick={() => openModal(comment)}
+              >
+                <PencilIcon />
+              </Button>
+            </div>
+          )}
+        </div>
       </div>
-      {comment.userId === session.user.id && (
-        <Button variant={'link'} asChild>
-          <Link href={basePath + '/' + comment.id}>Edit</Link>
-        </Button>
-      )}
-    </li>
+    </div>
   );
 };
 
 const EmptyState = ({ openModal }: { openModal: TOpenModal }) => {
   return (
-    <div className="text-center">
-      <h3 className="mt-2 text-sm font-semibold text-secondary-foreground">
-        No comments
-      </h3>
-      <p className="mt-1 text-sm text-muted-foreground">
-        Get started by creating a new comment.
-      </p>
-      <div className="mt-6">
-        <Button onClick={() => openModal()}>
-          <PlusIcon className="h-4" /> New Comments{' '}
-        </Button>
+    <div className="text-center py-8">
+      <div className="mx-auto h-12 w-12 rounded-full bg-muted flex items-center justify-center mb-4">
+        <UserIcon className="h-6 w-6 text-muted-foreground" />
       </div>
+      <h3 className="text-sm font-semibold text-secondary-foreground mb-2">
+        No comments yet
+      </h3>
+      <p className="text-sm text-muted-foreground mb-6">
+        Be the first to share your thoughts!
+      </p>
+      <Button onClick={() => openModal()}>
+        <PlusIcon className="h-4 w-4 mr-2" />
+        Add Comment
+      </Button>
     </div>
   );
 };

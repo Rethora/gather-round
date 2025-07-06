@@ -61,6 +61,13 @@ export const getEffectiveGuestCountForEvent = async (eventId: string) => {
   return { count };
 };
 
+export const getAttendingGuestCountForEvent = async (eventId: string) => {
+  const count = await db.rsvp.count({
+    where: { eventId: eventId, status: RsvpStatus.YES },
+  });
+  return { count };
+};
+
 export const getEventCapacity = async (eventId: string) => {
   const event = await db.event.findUnique({
     where: { id: eventId },

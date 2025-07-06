@@ -7,7 +7,7 @@ import OptimisticEvent from './OptimisticEvent';
 import { checkAuth, getUserAuth } from '@/lib/auth/utils';
 import RsvpList from '@/components/rsvps/RsvpList';
 import RsvpStatusComponent from '@/components/rsvps/RsvpStatus';
-import CommentList from '@/components/comments/CommentList';
+import EventCommentSection from '@/components/events/EventCommentSection';
 import PollingWrapper from '@/components/shared/PollingWrapper';
 
 import { BackButton } from '@/components/shared/BackButton';
@@ -42,30 +42,27 @@ const Event = async ({ id }: { id: string }) => {
     <Suspense fallback={<Loading />}>
       <div className="relative">
         <BackButton currentResource="events" />
-        <OptimisticEvent event={event} session={session!} />
+        <OptimisticEvent event={event} session={session!} rsvps={rsvps} />
       </div>
 
-      {userRsvp && (
-        <div className="relative mt-8 mx-4">
-          <RsvpStatusComponent
-            rsvp={userRsvp}
-            capacityInfo={capacityInfo || null}
-          />
-        </div>
-      )}
+      <div className="max-w-3xl">
+        {userRsvp && (
+          <div className="relative mt-8 mx-4">
+            <RsvpStatusComponent
+              rsvp={userRsvp}
+              capacityInfo={capacityInfo || null}
+            />
+          </div>
+        )}
 
-      {session?.user.id === event.userId && event.isPrivate && (
-        <div className="relative mt-8 mx-4">
-          <h3 className="text-xl font-medium mb-4">
-            {event.title}&apos;s Rsvps
-          </h3>
-          <RsvpList events={[event]} eventId={event.id} rsvps={rsvps} />
-        </div>
-      )}
+        {session?.user.id === event.userId && event.isPrivate && (
+          <div className="relative mt-8 mx-4">
+            <h3 className="text-xl font-medium mb-4">RSVP List</h3>
+            <RsvpList events={[event]} eventId={event.id} rsvps={rsvps} />
+          </div>
+        )}
 
-      <div className="relative mt-8 mx-4">
-        <h3 className="text-xl font-medium mb-4">Comments</h3>
-        <CommentList
+        <EventCommentSection
           events={[]}
           eventId={event.id}
           comments={comments}

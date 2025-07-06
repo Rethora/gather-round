@@ -7,12 +7,11 @@ import { toast } from 'sonner';
 import { useValidatedForm } from '@/lib/hooks/useValidatedForm';
 
 import { type Action, cn } from '@/lib/utils';
-import { type TAddOptimistic } from '@/app/(app)/comments/useOptimisticComments';
+import { type TAddOptimistic } from '@/lib/hooks/useOptimisticComments';
 
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
-import { useBackPath } from '@/components/shared/BackButton';
 
 import {
   Select,
@@ -65,7 +64,6 @@ const CommentForm = ({
   }, [pausePolling, resumePolling]);
 
   const router = useRouter();
-  const backpath = useBackPath('comments');
 
   const onSuccess = (
     action: Action,
@@ -81,7 +79,6 @@ const CommentForm = ({
       router.refresh();
       if (postSuccess) postSuccess();
       toast.success(`Comment ${action}d!`);
-      if (action === 'delete') router.push(backpath);
     }
   };
 

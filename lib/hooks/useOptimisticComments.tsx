@@ -19,9 +19,16 @@ export const useOptimisticComments = (
 
       const optimisticEvent = events.find(event => event.id === data.eventId)!;
 
+      // Convert the event to match CompleteEvent type
+      const completeEvent = {
+        ...optimisticEvent,
+        description: optimisticEvent.description ?? null,
+        imageUrl: optimisticEvent.imageUrl ?? null,
+      };
+
       const optimisticComment = {
         ...data,
-        event: optimisticEvent,
+        event: completeEvent,
         id: 'optimistic',
       };
 

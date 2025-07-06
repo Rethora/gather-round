@@ -12,6 +12,14 @@ import RsvpForm from './RsvpForm';
 import { PlusIcon } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { usePollingContext } from '@/lib/hooks/usePollingContext';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
 
 type TOpenModal = (rsvp?: Rsvp) => void;
 
@@ -88,9 +96,24 @@ export default function RsvpList({
         <EmptyState openModal={openModal} />
       ) : (
         <ul>
-          {optimisticRsvps.map(rsvp => (
-            <Rsvp rsvp={rsvp} key={rsvp.id} openModal={openModal} />
-          ))}
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Email</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead>Invited at</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {optimisticRsvps.map(rsvp => (
+                <TableRow key={rsvp.id}>
+                  <TableCell>{rsvp.invitee.email}</TableCell>
+                  <TableCell>{rsvp.status}</TableCell>
+                  <TableCell>{rsvp.createdAt.toLocaleString()}</TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
         </ul>
       )}
     </div>
