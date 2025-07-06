@@ -1,6 +1,7 @@
 'use client';
 
 import { usePolling } from '@/lib/hooks/usePolling';
+import { usePollingContext } from '@/lib/hooks/usePollingContext';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { POLLING_CONFIG, type PollingConfigKey } from '@/config/polling';
@@ -18,12 +19,13 @@ export default function PollingWrapper({
 }: PollingWrapperProps) {
   const router = useRouter();
   const [isVisible, setIsVisible] = useState(true);
+  const { isPollingPaused } = usePollingContext();
   const config = POLLING_CONFIG[configKey];
 
   const pollForUpdates = async () => {
     try {
-      // Only poll if the page is visible
-      if (document.visibilityState === 'visible') {
+      // Only poll if the page is visible and polling is not paused
+      if (document.visibilityState === 'visible' && !isPollingPaused) {
         router.refresh();
       }
     } catch (error) {
@@ -33,7 +35,7 @@ export default function PollingWrapper({
 
   const { isPolling } = usePolling(pollForUpdates, {
     interval: config.interval,
-    enabled: config.enabled && isVisible,
+    enabled: config.enabled && isVisible && !isPollingPaused,
     immediate: false,
     onError: error => {
       console.error('Polling failed:', error);

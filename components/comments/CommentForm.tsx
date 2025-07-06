@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-import { useState, useTransition } from 'react';
+import { useState, useTransition, useEffect } from 'react';
 import { useFormStatus } from 'react-dom';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
@@ -29,6 +29,7 @@ import {
   updateCommentAction,
 } from '@/lib/actions/comments';
 import { type Event, type EventId } from '@/lib/db/schema/events';
+import { usePollingContext } from '@/lib/hooks/usePollingContext';
 
 const CommentForm = ({
   events,
@@ -50,9 +51,18 @@ const CommentForm = ({
   const { errors, hasErrors, setErrors, handleChange } =
     useValidatedForm<Comment>(insertCommentParams);
   const editing = !!comment?.id;
+  const { pausePolling, resumePolling } = usePollingContext();
 
   const [isDeleting, setIsDeleting] = useState(false);
   const [pending, startMutation] = useTransition();
+
+  // Pause polling when form is being used
+  useEffect(() => {
+    pausePolling();
+    return () => {
+      resumePolling();
+    };
+  }, [pausePolling, resumePolling]);
 
   const router = useRouter();
   const backpath = useBackPath('comments');

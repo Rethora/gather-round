@@ -2,7 +2,7 @@ import { Suspense } from 'react';
 import { notFound } from 'next/navigation';
 
 import { getEventByIdWithRsvpsWithUsersAndComments } from '@/lib/api/events/queries';
-import { getUserRsvpForEvent } from '@/lib/api/rsvps/queries';
+import { getUserRsvpForEvent, getEventCapacity } from '@/lib/api/rsvps/queries';
 import OptimisticEvent from './OptimisticEvent';
 import { checkAuth, getUserAuth } from '@/lib/auth/utils';
 import RsvpList from '@/components/rsvps/RsvpList';
@@ -35,6 +35,7 @@ const Event = async ({ id }: { id: string }) => {
   const { event, rsvps, comments } =
     await getEventByIdWithRsvpsWithUsersAndComments(id);
   const { rsvp: userRsvp } = await getUserRsvpForEvent(id);
+  const capacityInfo = await getEventCapacity(id);
 
   if (!event) notFound();
   return (
@@ -46,11 +47,14 @@ const Event = async ({ id }: { id: string }) => {
 
       {userRsvp && (
         <div className="relative mt-8 mx-4">
-          <RsvpStatusComponent rsvp={userRsvp} />
+          <RsvpStatusComponent
+            rsvp={userRsvp}
+            capacityInfo={capacityInfo || null}
+          />
         </div>
       )}
 
-      {session?.user.id === event.userId && (
+      {session?.user.id === event.userId && event.isPrivate && (
         <div className="relative mt-8 mx-4">
           <h3 className="text-xl font-medium mb-4">
             {event.title}&apos;s Rsvps

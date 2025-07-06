@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 import { cn } from '@/lib/utils';
 import { type Rsvp, CompleteRsvp } from '@/lib/db/schema/rsvps';
@@ -11,6 +11,7 @@ import { Button } from '@/components/ui/button';
 import RsvpForm from './RsvpForm';
 import { PlusIcon } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { usePollingContext } from '@/lib/hooks/usePollingContext';
 
 type TOpenModal = (rsvp?: Rsvp) => void;
 
@@ -29,19 +30,41 @@ export default function RsvpList({
   );
   const [open, setOpen] = useState(false);
   const [activeRsvp, setActiveRsvp] = useState<Rsvp | null>(null);
+  const { pausePolling, resumePolling } = usePollingContext();
+
   const openModal = (rsvp?: Rsvp) => {
     setOpen(true);
+    pausePolling();
     if (rsvp) setActiveRsvp(rsvp);
     else setActiveRsvp(null);
   };
-  const closeModal = () => setOpen(false);
+
+  const closeModal = () => {
+    setOpen(false);
+    resumePolling();
+  };
+
   const event = events.find(e => e.id === eventId);
+
+  // Pause polling when modal is open, resume when closed
+  useEffect(() => {
+    if (open) {
+      pausePolling();
+    } else {
+      resumePolling();
+    }
+  }, [open, pausePolling, resumePolling]);
 
   return (
     <div>
       <Modal
         open={open}
-        setOpen={setOpen}
+        setOpen={isOpen => {
+          setOpen(isOpen);
+          if (!isOpen) {
+            resumePolling();
+          }
+        }}
         title={activeRsvp ? 'Edit Rsvp' : 'Create Rsvp'}
       >
         <RsvpForm
@@ -51,6 +74,7 @@ export default function RsvpList({
           closeModal={closeModal}
           events={events}
           eventId={eventId}
+          existingRsvps={rsvps}
         />
       </Modal>
       {!event?.isCanceled && (

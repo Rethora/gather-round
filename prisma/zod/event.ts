@@ -12,7 +12,9 @@ export const eventSchema = z.object({
   id: z.string(),
   title: z.string(),
   description: z.string().nullish(),
-  dateTime: z.date(),
+  dateTime: z.date().refine(date => date > new Date(), {
+    message: 'Event date must be in the future',
+  }),
   location: z.string(),
   maxGuests: z.number().int(),
   imageUrl: z.string().nullish(),

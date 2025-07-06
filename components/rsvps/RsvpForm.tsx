@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-import { useState, useTransition } from 'react';
+import { useState, useTransition, useEffect } from 'react';
 import { useFormStatus } from 'react-dom';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
@@ -28,15 +28,18 @@ import {
   deleteRsvpAction,
   updateRsvpAction,
   createMultipleRsvpsAction,
+  checkEventCapacityAction,
 } from '@/lib/actions/rsvps';
 import { type Event, type EventId } from '@/lib/db/schema/events';
 import { lookupUsersByPartialEmail } from '@/lib/actions/users';
 import { ComboBox } from '@/components/ui/combo-box';
+import { usePollingContext } from '@/lib/hooks/usePollingContext';
 
 const RsvpForm = ({
   events,
   eventId,
   rsvp,
+  existingRsvps = [],
   openModal,
   closeModal,
   addOptimistic,
@@ -45,6 +48,7 @@ const RsvpForm = ({
   rsvp?: Rsvp | null;
   events: Event[];
   eventId?: EventId;
+  existingRsvps?: Array<{ inviteeId: string; invitee?: { email: string } }>;
   openModal?: (rsvp?: Rsvp) => void;
   closeModal?: () => void;
   addOptimistic?: TAddOptimistic;
@@ -53,6 +57,7 @@ const RsvpForm = ({
   const { errors, hasErrors, setErrors, handleChange } =
     useValidatedForm<Rsvp>(insertRsvpParams);
   const editing = !!rsvp?.id;
+  const { pausePolling, resumePolling } = usePollingContext();
 
   const [isDeleting, setIsDeleting] = useState(false);
   const [pending, startMutation] = useTransition();
@@ -65,16 +70,101 @@ const RsvpForm = ({
     { value: string; label: string }[]
   >([]);
 
+  // Existing RSVPs state
+  const [existingRsvpUsers, setExistingRsvpUsers] = useState<
+    { value: string; label: string }[]
+  >([]);
+
+  // Capacity checking state
+  const [capacityInfo, setCapacityInfo] = useState<{
+    effectiveGuests: number;
+    maxGuests: number;
+    availableSpots: number;
+    canAddGuests: boolean;
+  } | null>(null);
+
+  // Pause polling when form is being used
+  useEffect(() => {
+    pausePolling();
+    return () => {
+      resumePolling();
+    };
+  }, [pausePolling, resumePolling]);
+
+  // Process existing RSVPs when component mounts or props change
+  useEffect(() => {
+    const existingUsers = existingRsvps.map(rsvp => ({
+      value: rsvp.inviteeId,
+      label: rsvp.invitee?.email || rsvp.inviteeId,
+    }));
+    setExistingRsvpUsers(existingUsers);
+    // Pre-populate selected users with existing RSVPs
+    setSelectedUsers(existingUsers);
+  }, [existingRsvps]);
+
   // Debounced DB query for user lookup
   const debouncedLookup = useDebouncedCallback(async (search: string) => {
     const foundUsers = await lookupUsersByPartialEmail(search);
+
+    // Filter out users who are already invited
+    const filteredUsers = foundUsers.filter(
+      user => !existingRsvpUsers.some(existing => existing.value === user.id)
+    );
+
     setUserOptions(
-      foundUsers.map(user => ({ value: user.id, label: user.email }))
+      filteredUsers.map(user => ({ value: user.id, label: user.email }))
     );
   }, 500);
 
   const handleInviteeSearch = (search: string) => {
     debouncedLookup(search);
+  };
+
+  // Check capacity when selected users change
+  const checkCapacity = async (
+    newSelectedUsers: { value: string; label: string }[]
+  ) => {
+    if (!eventId || newSelectedUsers.length === 0) {
+      setCapacityInfo(null);
+      return;
+    }
+
+    try {
+      // Only count new invitees for capacity checking
+      const newInvitees = newSelectedUsers.filter(
+        user =>
+          !existingRsvpUsers.some(existing => existing.value === user.value)
+      );
+
+      const result = await checkEventCapacityAction(
+        eventId,
+        newInvitees.length
+      );
+      if (result.success && result.canAddGuests !== undefined) {
+        setCapacityInfo({
+          effectiveGuests: result.effectiveGuests,
+          maxGuests: result.maxGuests,
+          availableSpots: result.availableSpots,
+          canAddGuests: result.canAddGuests,
+        });
+
+        if (!result.canAddGuests && newInvitees.length > 0) {
+          toast.error('Event at capacity', {
+            description: `Cannot add ${newInvitees.length} new guest(s). Event capacity is ${result.maxGuests} and currently has ${result.effectiveGuests} reserved spots.`,
+          });
+        }
+      }
+    } catch (error) {
+      console.error('Error checking capacity:', error);
+    }
+  };
+
+  // Handle user selection with capacity checking
+  const handleUserSelection = (
+    newSelectedUsers: { value: string; label: string }[]
+  ) => {
+    setSelectedUsers(newSelectedUsers);
+    checkCapacity(newSelectedUsers);
   };
 
   const router = useRouter();
@@ -108,13 +198,32 @@ const RsvpForm = ({
         return;
       }
 
+      // Check capacity one more time before submitting
+      if (capacityInfo && !capacityInfo.canAddGuests) {
+        toast.error('Cannot proceed - event at capacity');
+        return;
+      }
+
       if (closeModal) closeModal();
 
       try {
         startMutation(async () => {
+          // Filter out users who are already invited (they're already in existingRsvps)
+          const newInvitees = selectedUsers.filter(
+            user =>
+              !existingRsvpUsers.some(existing => existing.value === user.value)
+          );
+
+          if (newInvitees.length === 0) {
+            toast.info(
+              'No new users to invite - all selected users are already invited'
+            );
+            return;
+          }
+
           const result = await createMultipleRsvpsAction({
             eventId: eventId,
-            inviteeIds: selectedUsers.map(user => user.value),
+            inviteeIds: newInvitees.map(user => user.value),
           });
 
           if (typeof result === 'string') {
@@ -203,11 +312,42 @@ const RsvpForm = ({
           <ComboBox
             options={userOptions}
             selectedOptions={selectedUsers}
-            setSelectedOptions={setSelectedUsers}
+            setSelectedOptions={handleUserSelection}
             placeholder="Search users..."
             onSearchChange={handleInviteeSearch}
           />
         </div>
+        {/* Show existing invitees */}
+        {existingRsvpUsers.length > 0 && (
+          <div className="mt-2">
+            <p className="text-sm text-gray-600 mb-2">Already invited:</p>
+            <div className="flex flex-wrap gap-2">
+              {existingRsvpUsers.map(user => (
+                <span
+                  key={user.value}
+                  className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-gray-100 text-gray-700"
+                >
+                  {user.label}
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
+        {/* Capacity info display */}
+        {capacityInfo && (
+          <div className="mt-2 text-sm">
+            <p
+              className={cn(
+                capacityInfo.canAddGuests ? 'text-green-600' : 'text-red-600'
+              )}
+            >
+              {capacityInfo.effectiveGuests}/{capacityInfo.maxGuests} reserved
+              spots
+              {capacityInfo.availableSpots > 0 &&
+                ` (${capacityInfo.availableSpots} spots available)`}
+            </p>
+          </div>
+        )}
         {/* Optionally render errors here */}
       </div>
 
@@ -251,6 +391,7 @@ const RsvpForm = ({
         editing={editing}
         hasSelectedUsers={selectedUsers.length > 0}
         hasEventId={!!eventId}
+        capacityExceeded={capacityInfo ? !capacityInfo.canAddGuests : false}
       />
 
       {/* Delete Button */}
@@ -290,19 +431,25 @@ const SaveButton = ({
   errors,
   hasSelectedUsers,
   hasEventId,
+  capacityExceeded,
 }: {
   editing: boolean;
   errors: boolean;
   hasSelectedUsers: boolean;
   hasEventId: boolean;
+  capacityExceeded: boolean;
 }) => {
   const { pending } = useFormStatus();
   const isCreating = pending && editing === false;
   const isUpdating = pending && editing === true;
 
-  // Disable if we have selected users but no event ID, or if we have errors
+  // Disable if we have selected users but no event ID, if we have errors, or if capacity is exceeded
   const isDisabled =
-    isCreating || isUpdating || errors || (hasSelectedUsers && !hasEventId);
+    isCreating ||
+    isUpdating ||
+    errors ||
+    (hasSelectedUsers && !hasEventId) ||
+    capacityExceeded;
 
   return (
     <Button

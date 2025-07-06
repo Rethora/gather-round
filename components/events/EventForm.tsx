@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-import { useState, useTransition } from 'react';
+import { useState, useTransition, useEffect } from 'react';
 import { useFormStatus } from 'react-dom';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
@@ -31,6 +31,7 @@ import {
   deleteEventAction,
   updateEventAction,
 } from '@/lib/actions/events';
+import { usePollingContext } from '@/lib/hooks/usePollingContext';
 
 const EventForm = ({
   event,
@@ -49,6 +50,7 @@ const EventForm = ({
   const { errors, hasErrors, setErrors, handleChange } =
     useValidatedForm<Event>(insertEventParams);
   const editing = !!event?.id;
+  const { pausePolling, resumePolling } = usePollingContext();
 
   // Initialize dateTime with the event's dateTime or current date/time
   const [dateTime, setDateTime] = useState<Date | undefined>(event?.dateTime);
@@ -60,6 +62,14 @@ const EventForm = ({
 
   const [isDeleting, setIsDeleting] = useState(false);
   const [pending, startMutation] = useTransition();
+
+  // Pause polling when form is being used
+  useEffect(() => {
+    pausePolling();
+    return () => {
+      resumePolling();
+    };
+  }, [pausePolling, resumePolling]);
 
   const router = useRouter();
   const backpath = useBackPath('events');
@@ -245,7 +255,11 @@ const EventForm = ({
                 mode="single"
                 onSelect={handleDateSelect}
                 selected={dateTime}
-                disabled={date => date < new Date('1900-01-01')}
+                disabled={date => {
+                  const today = new Date();
+                  today.setHours(0, 0, 0, 0);
+                  return date < today;
+                }}
                 required
               />
             </PopoverContent>
@@ -258,6 +272,7 @@ const EventForm = ({
               onChange={e => handleTimeChange(e.target.value)}
               className="w-[120px]"
               required
+              min={new Date().toISOString().split('T')[0]}
             />
           </div>
         </div>

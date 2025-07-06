@@ -2,10 +2,15 @@
 
 import { Rsvp } from '@/lib/db/schema/rsvps';
 import { RsvpStatus } from '@prisma/client';
-import { updateRsvpAction } from '@/lib/actions/rsvps';
+import {
+  updateRsvpAction,
+  checkEventCapacityAction,
+} from '@/lib/actions/rsvps';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { CheckCircle, XCircle, HelpCircle, Clock } from 'lucide-react';
+import { toast } from 'sonner';
+import { useState } from 'react';
 
 const statusConfig = {
   PENDING: {
@@ -30,19 +35,88 @@ const statusConfig = {
   },
 };
 
-export default function RsvpStatusComponent({ rsvp }: { rsvp: Rsvp }) {
+type CapacityInfo = {
+  effectiveGuests: number;
+  maxGuests: number;
+  availableSpots: number;
+  canAddGuests: boolean;
+} | null;
+
+export default function RsvpStatusComponent({
+  rsvp,
+  capacityInfo,
+}: {
+  rsvp: Rsvp;
+  capacityInfo: CapacityInfo;
+}) {
+  const [isUpdating, setIsUpdating] = useState(false);
+
   const currentStatus = rsvp.status;
   const config = statusConfig[currentStatus];
   const Icon = config.icon;
 
   const handleStatusUpdate = async (newStatus: RsvpStatus) => {
-    console.log('newStatus', newStatus);
-    await updateRsvpAction({
-      id: rsvp.id,
-      eventId: rsvp.eventId,
-      inviteeId: rsvp.inviteeId,
-      status: newStatus,
-    });
+    setIsUpdating(true);
+
+    try {
+      // Only check capacity when changing from NO to other statuses (since NO doesn't reserve a spot)
+      if (
+        currentStatus === RsvpStatus.NO &&
+        (newStatus === RsvpStatus.YES ||
+          newStatus === RsvpStatus.MAYBE ||
+          newStatus === RsvpStatus.PENDING)
+      ) {
+        const capacityResult = await checkEventCapacityAction(rsvp.eventId, 1);
+
+        if (capacityResult.error) {
+          toast.error('Error checking capacity', {
+            description: capacityResult.error,
+          });
+          setIsUpdating(false);
+          return;
+        }
+
+        if (!capacityResult.canAddGuests) {
+          toast.error('Cannot change status', {
+            description: `Event is at capacity (${capacityResult.effectiveGuests}/${capacityResult.maxGuests} reserved spots). You cannot change your status from NO to ${newStatus}.`,
+          });
+          setIsUpdating(false);
+          return;
+        }
+      }
+
+      console.log('newStatus', newStatus);
+      await updateRsvpAction({
+        id: rsvp.id,
+        eventId: rsvp.eventId,
+        inviteeId: rsvp.inviteeId,
+        status: newStatus,
+      });
+
+      toast.success(`Status updated to ${statusConfig[newStatus].label}`);
+    } catch (error) {
+      console.error('Error updating RSVP status:', error);
+      toast.error('Failed to update status', {
+        description:
+          error instanceof Error ? error.message : 'An error occurred',
+      });
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
+  // Determine if buttons should be shown based on capacity and current status
+  const shouldShowButtons = () => {
+    // If event is at capacity and user is currently NO, don't show buttons to change to YES/MAYBE/PENDING
+    if (
+      capacityInfo &&
+      !capacityInfo.canAddGuests &&
+      currentStatus === RsvpStatus.NO
+    ) {
+      return false;
+    }
+
+    return true;
   };
 
   return (
@@ -55,7 +129,7 @@ export default function RsvpStatusComponent({ rsvp }: { rsvp: Rsvp }) {
         </Badge>
       </div>
 
-      {currentStatus === 'PENDING' && (
+      {currentStatus === 'PENDING' && shouldShowButtons() && (
         <div className="space-y-3">
           <p className="text-sm text-gray-600">
             Please respond to this invitation:
@@ -64,31 +138,34 @@ export default function RsvpStatusComponent({ rsvp }: { rsvp: Rsvp }) {
             <Button
               onClick={() => handleStatusUpdate('YES')}
               className="bg-green-600 hover:bg-green-700"
+              disabled={isUpdating}
             >
               <CheckCircle className="w-4 h-4 mr-2" />
-              Yes, I&apos;ll be there
+              {isUpdating ? 'Checking...' : "Yes, I'll be there"}
             </Button>
             <Button
               onClick={() => handleStatusUpdate('MAYBE')}
               variant="outline"
               className="border-blue-300 text-blue-700 hover:bg-blue-50"
+              disabled={isUpdating}
             >
               <HelpCircle className="w-4 h-4 mr-2" />
-              Maybe
+              {isUpdating ? 'Checking...' : 'Maybe'}
             </Button>
             <Button
               onClick={() => handleStatusUpdate('NO')}
               variant="outline"
               className="border-red-300 text-red-700 hover:bg-red-50"
+              disabled={isUpdating}
             >
               <XCircle className="w-4 h-4 mr-2" />
-              No, I can&apos;t make it
+              {isUpdating ? 'Updating...' : "No, I can't make it"}
             </Button>
           </div>
         </div>
       )}
 
-      {currentStatus !== 'PENDING' && (
+      {currentStatus !== 'PENDING' && shouldShowButtons() && (
         <div className="space-y-3">
           <p className="text-sm text-gray-600">You can update your response:</p>
           <div className="flex gap-2">
@@ -96,9 +173,10 @@ export default function RsvpStatusComponent({ rsvp }: { rsvp: Rsvp }) {
               <Button
                 onClick={() => handleStatusUpdate('YES')}
                 className="bg-green-600 hover:bg-green-700"
+                disabled={isUpdating}
               >
                 <CheckCircle className="w-4 h-4 mr-2" />
-                Yes, I&apos;ll be there
+                {isUpdating ? 'Checking...' : "Yes, I'll be there"}
               </Button>
             )}
             {currentStatus !== 'MAYBE' && (
@@ -106,9 +184,10 @@ export default function RsvpStatusComponent({ rsvp }: { rsvp: Rsvp }) {
                 onClick={() => handleStatusUpdate('MAYBE')}
                 variant="outline"
                 className="border-blue-300 text-blue-700 hover:bg-blue-50"
+                disabled={isUpdating}
               >
                 <HelpCircle className="w-4 h-4 mr-2" />
-                Maybe
+                {isUpdating ? 'Checking...' : 'Maybe'}
               </Button>
             )}
             {currentStatus !== 'NO' && (
@@ -116,12 +195,23 @@ export default function RsvpStatusComponent({ rsvp }: { rsvp: Rsvp }) {
                 onClick={() => handleStatusUpdate('NO')}
                 variant="outline"
                 className="border-red-300 text-red-700 hover:bg-red-50"
+                disabled={isUpdating}
               >
                 <XCircle className="w-4 h-4 mr-2" />
-                No, I can&apos;t make it
+                {isUpdating ? 'Updating...' : "No, I can't make it"}
               </Button>
             )}
           </div>
+        </div>
+      )}
+
+      {/* Show message when buttons are hidden due to capacity */}
+      {!shouldShowButtons() && (
+        <div className="space-y-3">
+          <p className="text-sm text-red-600">
+            Event is at capacity. You can&apos;t change your status at this
+            time.
+          </p>
         </div>
       )}
     </div>

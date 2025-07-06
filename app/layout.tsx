@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import localFont from 'next/font/local';
 import './globals.css';
 import { ThemeProvider } from '@/components/ThemeProvider';
+import { PollingProvider } from '@/lib/hooks/usePollingContext';
 
 const geistSans = localFont({
   src: './fonts/GeistVF.woff',
@@ -35,7 +36,7 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          {children}
+          <PollingProvider>{children}</PollingProvider>
         </ThemeProvider>
       </body>
     </html>

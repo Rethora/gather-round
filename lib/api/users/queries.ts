@@ -4,6 +4,11 @@ export const getUsersByPartialEmail = async (partialEmail: string) => {
   if (partialEmail.length < 3) return [];
   const foundUsers = await db.user.findMany({
     where: { email: { contains: partialEmail } },
+    select: {
+      id: true,
+      name: true,
+      email: true,
+    },
   });
   return foundUsers;
 };
@@ -23,6 +28,18 @@ export const getUsersByEmails = async (emails: string[]) => {
 export const getUserByEmail = async (email: string) => {
   const user = await db.user.findUnique({
     where: { email },
+    select: {
+      id: true,
+      name: true,
+      email: true,
+    },
+  });
+  return user;
+};
+
+export const getUserById = async (id: string) => {
+  const user = await db.user.findUnique({
+    where: { id },
     select: {
       id: true,
       name: true,

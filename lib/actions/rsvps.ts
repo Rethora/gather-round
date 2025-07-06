@@ -19,8 +19,10 @@ import {
 } from '@/lib/db/schema/rsvps';
 import { createNotificationAction } from './notifications';
 import { getEventById } from '../api/events/queries';
+import { getEffectiveGuestCountForEvent } from '../api/rsvps/queries';
 import { NotificationType } from '@prisma/client';
 import { NOTIFICATION_TITLES } from '@/config/notifications';
+import { getUserById } from '@/lib/api/users/queries';
 
 const handleErrors = (e: unknown) => {
   const errMsg = 'Error, please try again.';
@@ -33,6 +35,33 @@ const handleErrors = (e: unknown) => {
 };
 
 const revalidateRsvps = () => revalidatePath('/rsvps');
+
+export const checkEventCapacityAction = async (
+  eventId: string,
+  additionalGuests: number = 1
+) => {
+  try {
+    const { event } = await getEventById(eventId);
+    if (!event) {
+      return { error: 'Event not found' };
+    }
+
+    const { count: effectiveGuests } =
+      await getEffectiveGuestCountForEvent(eventId);
+    const availableSpots = event.maxGuests - effectiveGuests;
+    const canAddGuests = availableSpots >= additionalGuests;
+
+    return {
+      success: true,
+      effectiveGuests,
+      maxGuests: event.maxGuests,
+      availableSpots,
+      canAddGuests,
+    };
+  } catch (e) {
+    return { error: handleErrors(e) };
+  }
+};
 
 export const createRsvpAction = async (input: NewRsvpParams) => {
   try {
@@ -76,6 +105,25 @@ export const updateRsvpAction = async (input: UpdateRsvpParams) => {
   try {
     const payload = updateRsvpParams.parse(input);
     await updateRsvp(payload.id, payload);
+    const { event } = await getEventById(payload.eventId);
+    if (!event) {
+      throw { error: 'Event not found' };
+    }
+    try {
+      const invitedUser = await getUserById(payload.inviteeId);
+      if (!invitedUser) {
+        throw { error: 'User not found' };
+      }
+      await createNotificationAction({
+        title: NOTIFICATION_TITLES.RSVP_UPDATED,
+        userId: event.userId,
+        eventId: payload.eventId,
+        message: `${invitedUser.name ?? invitedUser.email ?? 'Someone'} has updated their RSVP for ${event.title} to ${payload.status}`,
+        type: NotificationType.RSVP_UPDATED,
+      });
+    } catch (e) {
+      console.error('Error creating notification', e);
+    }
     revalidateRsvps();
   } catch (e) {
     return handleErrors(e);

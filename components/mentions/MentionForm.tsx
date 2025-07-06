@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-import { useState, useTransition } from 'react';
+import { useState, useTransition, useEffect } from 'react';
 import { useFormStatus } from 'react-dom';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
@@ -29,6 +29,7 @@ import {
   updateMentionAction,
 } from '@/lib/actions/mentions';
 import { type Comment, type CommentId } from '@/lib/db/schema/comments';
+import { usePollingContext } from '@/lib/hooks/usePollingContext';
 
 const MentionForm = ({
   comments,
@@ -50,9 +51,18 @@ const MentionForm = ({
   const { errors, hasErrors, setErrors, handleChange } =
     useValidatedForm<Mention>(insertMentionParams);
   const editing = !!mention?.id;
+  const { pausePolling, resumePolling } = usePollingContext();
 
   const [isDeleting, setIsDeleting] = useState(false);
   const [pending, startMutation] = useTransition();
+
+  // Pause polling when form is being used
+  useEffect(() => {
+    pausePolling();
+    return () => {
+      resumePolling();
+    };
+  }, [pausePolling, resumePolling]);
 
   const router = useRouter();
   const backpath = useBackPath('mentions');

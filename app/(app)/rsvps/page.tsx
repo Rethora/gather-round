@@ -29,6 +29,7 @@ const Rsvps = async () => {
 
   const { rsvps } = await getRsvps();
   const { events } = await getEvents();
+
   return (
     <Suspense fallback={<Loading />}>
       <RsvpList rsvps={rsvps} events={events} />

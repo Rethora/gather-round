@@ -18,6 +18,29 @@ export const createRsvp = async (rsvp: NewRsvpParams) => {
     userId: session?.user.id,
   });
   try {
+    // Check event capacity before creating RSVP
+    const event = await db.event.findUnique({
+      where: { id: rsvp.eventId },
+    });
+    if (!event) {
+      throw { error: 'Event not found' };
+    }
+
+    const effectiveGuestCount = await db.rsvp.count({
+      where: {
+        eventId: rsvp.eventId,
+        status: {
+          in: [RsvpStatus.YES, RsvpStatus.MAYBE, RsvpStatus.PENDING],
+        },
+      },
+    });
+
+    if (effectiveGuestCount >= event.maxGuests) {
+      throw {
+        error: `Cannot add guest. Event capacity is ${event.maxGuests} and currently has ${effectiveGuestCount} reserved spots.`,
+      };
+    }
+
     const r = await db.rsvp.create({ data: newRsvp });
     return { rsvp: r };
   } catch (err) {
@@ -34,6 +57,39 @@ export const createMultipleRsvps = async (input: NewMultipleRsvpsParams) => {
   }
 
   try {
+    const event = await db.event.findUnique({
+      where: { id: input.eventId },
+    });
+    if (!event) {
+      throw { error: 'Event not found' };
+    }
+    if (!event.isPrivate) {
+      throw { error: 'Cannot invite to public event' };
+    }
+
+    // Check current effective guest count (including PENDING)
+    const effectiveGuestCount = await db.rsvp.count({
+      where: {
+        eventId: input.eventId,
+        status: {
+          in: [RsvpStatus.YES, RsvpStatus.MAYBE, RsvpStatus.PENDING],
+        },
+      },
+    });
+
+    // Calculate how many new RSVPs will be created (excluding self-invites)
+    const newRsvpCount = input.inviteeIds.filter(
+      id => id !== session.user.id
+    ).length;
+    const totalEffectiveGuestsAfterCreation =
+      effectiveGuestCount + newRsvpCount;
+
+    if (totalEffectiveGuestsAfterCreation > event.maxGuests) {
+      throw {
+        error: `Cannot add ${newRsvpCount} guest(s). Event capacity is ${event.maxGuests} and currently has ${effectiveGuestCount} reserved spots.`,
+      };
+    }
+
     // Use a transaction to create all RSVPs atomically
     const result = await db.$transaction(async tx => {
       const rsvps = [];
@@ -74,11 +130,55 @@ export const updateRsvp = async (id: RsvpId, rsvp: UpdateRsvpParams) => {
     userId: session?.user.id,
   });
   try {
+    // Get the current RSVP to check if status is changing
+    const currentRsvp = await db.rsvp.findUnique({
+      where: { id: rsvpId },
+    });
+
+    if (!currentRsvp) {
+      throw { error: 'RSVP not found' };
+    }
+
+    // Only check capacity when changing from NO to other statuses (since NO doesn't reserve a spot)
+    if (
+      newRsvp.status &&
+      currentRsvp.status === RsvpStatus.NO &&
+      (newRsvp.status === RsvpStatus.YES ||
+        newRsvp.status === RsvpStatus.MAYBE ||
+        newRsvp.status === RsvpStatus.PENDING)
+    ) {
+      const event = await db.event.findUnique({
+        where: { id: currentRsvp.eventId },
+      });
+
+      if (!event) {
+        throw { error: 'Event not found' };
+      }
+
+      // Count effective guests (excluding the current RSVP if it's NO)
+      const effectiveGuestCount = await db.rsvp.count({
+        where: {
+          eventId: currentRsvp.eventId,
+          status: {
+            in: [RsvpStatus.YES, RsvpStatus.MAYBE, RsvpStatus.PENDING],
+          },
+          id: {
+            not: rsvpId, // Exclude current RSVP from count
+          },
+        },
+      });
+
+      if (effectiveGuestCount >= event.maxGuests) {
+        throw {
+          error: `Cannot change status to ${newRsvp.status}. Event capacity is ${event.maxGuests} and currently has ${effectiveGuestCount} reserved spots.`,
+        };
+      }
+    }
+
     const r = await db.rsvp.update({
       where: { id: rsvpId, inviteeId: session?.user.id },
       data: newRsvp,
     });
-    console.log('updated rsvp', r);
     return { rsvp: r };
   } catch (err) {
     const message = (err as Error).message ?? 'Error, please try again';
