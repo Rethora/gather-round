@@ -17,13 +17,15 @@ import { Badge } from '@/components/ui/badge';
 
 type TOpenModal = (event?: Event) => void;
 
-type TabType = 'hosting' | 'attending';
+type TabType = 'hosting' | 'attending' | 'public';
 
 export default function EventList({
   events,
+  publicEvents,
   session,
 }: {
   events: CompleteEvent[];
+  publicEvents: CompleteEvent[];
   session: Session;
 }) {
   const { optimisticEvents, addOptimisticEvent } = useOptimisticEvents(events);
@@ -56,8 +58,15 @@ export default function EventList({
     );
   };
 
+  const sortPublicEvents = (events: CompleteEvent[]) => {
+    return events.sort(
+      (a, b) => new Date(a.dateTime).getTime() - new Date(b.dateTime).getTime()
+    );
+  };
+
   const sortedHostingEvents = sortEvents(hostingEvents);
   const sortedAttendingEvents = sortEvents(attendingEvents);
+  const sortedPublicEvents = sortPublicEvents(publicEvents);
 
   return (
     <div>
@@ -90,6 +99,13 @@ export default function EventList({
         >
           Attending ({sortedAttendingEvents.length})
         </Button>
+        <Button
+          variant={activeTab === 'public' ? 'default' : 'outline'}
+          onClick={() => setActiveTab('public')}
+          className="flex-1"
+        >
+          Browse ({sortedPublicEvents.length})
+        </Button>
       </div>
 
       {/* Create Event Button */}
@@ -102,12 +118,14 @@ export default function EventList({
       {/* Tab Content */}
       {activeTab === 'hosting' ? (
         <HostingTab events={sortedHostingEvents} openModal={openModal} />
-      ) : (
+      ) : activeTab === 'attending' ? (
         <AttendingTab
           events={sortedAttendingEvents}
           openModal={openModal}
           session={session}
         />
+      ) : (
+        <PublicTab events={sortedPublicEvents} openModal={openModal} />
       )}
     </div>
   );
@@ -178,6 +196,35 @@ const AttendingTab = ({
           openModal={openModal}
           session={session}
         />
+      ))}
+    </ul>
+  );
+};
+
+const PublicTab = ({
+  events,
+  openModal,
+}: {
+  events: CompleteEvent[];
+  openModal: TOpenModal;
+}) => {
+  if (events.length === 0) {
+    return (
+      <div className="text-center py-8">
+        <h3 className="mt-2 text-sm font-semibold text-secondary-foreground">
+          No public events
+        </h3>
+        <p className="mt-1 text-sm text-muted-foreground">
+          There are no public events available at the moment.
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <ul className="space-y-4">
+      {events.map(event => (
+        <PublicEvent key={event.id} event={event} openModal={openModal} />
       ))}
     </ul>
   );
@@ -365,6 +412,67 @@ const AttendingEvent = ({
               {rsvpStatus}
             </span>
           </div>
+        </div>
+
+        <Button variant={'link'} asChild>
+          <Link href={basePath + '/' + event.id}>View Details</Link>
+        </Button>
+      </div>
+    </li>
+  );
+};
+
+const PublicEvent = ({
+  event,
+  openModal: _,
+}: {
+  event: CompleteEvent;
+  openModal: TOpenModal;
+}) => {
+  const pathname = usePathname();
+  const basePath = pathname.includes('events')
+    ? pathname
+    : pathname + '/events/';
+
+  const formatDate = (date: Date) => {
+    return new Date(date).toLocaleDateString('en-US', {
+      weekday: 'short',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+  };
+
+  return (
+    <li className="border rounded-lg p-4 hover:bg-muted/50 transition-colors">
+      <div className="flex justify-between items-start">
+        <div className="flex-1">
+          <div className="flex items-center gap-2 mb-2">
+            <h3 className="font-semibold text-lg">{event.title}</h3>
+            {event.isCanceled && (
+              <span className="text-xs bg-destructive text-destructive-foreground px-2 py-1 rounded">
+                Canceled
+              </span>
+            )}
+          </div>
+
+          <div className="flex items-center gap-4 text-sm text-muted-foreground mb-3">
+            <div className="flex items-center gap-1">
+              <Calendar className="h-4 w-4" />
+              {formatDate(event.dateTime)}
+            </div>
+            <div className="flex items-center gap-1">
+              <Users className="h-4 w-4" />
+              {event.location}
+            </div>
+          </div>
+
+          {event.description && (
+            <p className="text-sm text-muted-foreground mb-3 line-clamp-2">
+              {event.description}
+            </p>
+          )}
         </div>
 
         <Button variant={'link'} asChild>

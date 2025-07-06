@@ -2,7 +2,7 @@ import { Suspense } from 'react';
 
 import Loading from '@/app/loading';
 import EventList from '@/components/events/EventList';
-import { getEvents } from '@/lib/api/events/queries';
+import { getEvents, getPublicEvents } from '@/lib/api/events/queries';
 
 import { checkAuth, getUserAuth } from '@/lib/auth/utils';
 
@@ -13,7 +13,7 @@ export default async function EventsPage() {
     <main>
       <div className="relative">
         <div className="flex justify-between">
-          <h1 className="font-semibold text-2xl my-2">My Events</h1>
+          <h1 className="font-semibold text-2xl my-2">Events</h1>
         </div>
         <Events />
       </div>
@@ -25,11 +25,18 @@ const Events = async () => {
   await checkAuth();
   const { session } = await getUserAuth();
 
-  const { events } = await getEvents();
+  const [{ events }, { events: publicEvents }] = await Promise.all([
+    getEvents(),
+    getPublicEvents(),
+  ]);
 
   return (
     <Suspense fallback={<Loading />}>
-      <EventList events={events} session={session!} />
+      <EventList
+        events={events}
+        publicEvents={publicEvents}
+        session={session!}
+      />
     </Suspense>
   );
 };

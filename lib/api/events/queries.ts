@@ -2,6 +2,21 @@ import { db } from '@/lib/db/index';
 import { getUserAuth } from '@/lib/auth/utils';
 import { type EventId, eventIdSchema } from '@/lib/db/schema/events';
 
+export const getPublicEvents = async () => {
+  const e = await db.event.findMany({
+    where: {
+      isPrivate: false,
+    },
+    include: {
+      rsvps: { include: { invitee: true } },
+    },
+    orderBy: {
+      dateTime: 'asc',
+    },
+  });
+  return { events: e };
+};
+
 export const getEvents = async () => {
   const { session } = await getUserAuth();
   const e = await db.event.findMany({
@@ -30,6 +45,7 @@ export const getEventById = async (id: EventId) => {
       OR: [
         { userId: session?.user.id },
         { rsvps: { some: { inviteeId: session?.user.id } } },
+        { isPrivate: false },
       ],
     },
   });
@@ -47,6 +63,7 @@ export const getEventByIdWithRsvpsWithUsersAndComments = async (
       OR: [
         { userId: session?.user.id },
         { rsvps: { some: { inviteeId: session?.user.id } } },
+        { isPrivate: false },
       ],
     },
     include: {
