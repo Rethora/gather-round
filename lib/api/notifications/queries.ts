@@ -4,14 +4,49 @@ import {
   type NotificationId,
   notificationIdSchema,
 } from '@/lib/db/schema/notifications';
+import { NotificationType, Prisma } from '@prisma/client';
 
-export const getNotifications = async () => {
+export interface GetNotificationsParams {
+  page?: number;
+  pageSize?: number;
+  search?: string;
+  status?: 'all' | 'read' | 'unread';
+  type?: NotificationType | 'all';
+}
+
+export const getNotifications = async ({
+  page = 1,
+  pageSize = 10,
+  search = '',
+  status = 'all',
+  type = 'EVENT_UPDATE',
+}: GetNotificationsParams = {}) => {
   const { session } = await getUserAuth();
-  const n = await db.notification.findMany({
-    where: { userId: session?.user.id },
+  if (!session?.user.id) return { notifications: [], total: 0 };
+
+  const where: Prisma.NotificationWhereInput = { userId: session.user.id };
+
+  if (status !== 'all') {
+    where.isRead = status === 'read';
+  }
+  if (type !== 'all') {
+    where.type = type;
+  }
+  if (search) {
+    where.OR = [
+      { title: { contains: search, mode: 'insensitive' } },
+      { message: { contains: search, mode: 'insensitive' } },
+    ];
+  }
+
+  const total = await db.notification.count({ where });
+  const notifications = await db.notification.findMany({
+    where,
     orderBy: { createdAt: 'desc' },
+    skip: (page - 1) * pageSize,
+    take: pageSize,
   });
-  return { notifications: n };
+  return { notifications, total };
 };
 
 export const getNotificationById = async (id: NotificationId) => {

@@ -14,6 +14,8 @@ import {
   insertNotificationParams,
   updateNotificationParams,
 } from '@/lib/db/schema/notifications';
+import { db } from '@/lib/db/index';
+import { getUserAuth } from '@/lib/auth/utils';
 
 const handleErrors = (e: unknown) => {
   const errMsg = 'Error, please try again.';
@@ -60,3 +62,23 @@ export const deleteNotificationAction = async (input: NotificationId) => {
     return handleErrors(e);
   }
 };
+
+export async function markNotificationsAsReadAction(notificationIds: string[]) {
+  const { session } = await getUserAuth();
+  if (!session?.user.id) {
+    throw new Error('Unauthorized');
+  }
+
+  await db.notification.updateMany({
+    where: {
+      id: { in: notificationIds },
+      userId: session.user.id,
+    },
+    data: {
+      isRead: true,
+    },
+  });
+
+  revalidatePath('/notifications');
+  return { success: true };
+}

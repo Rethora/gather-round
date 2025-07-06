@@ -8,6 +8,7 @@ import {
   notificationIdSchema,
 } from '@/lib/db/schema/notifications';
 import { getUserAuth } from '@/lib/auth/utils';
+import { revalidatePath } from 'next/cache';
 
 export const createNotification = async (
   notification: NewNotificationParams
@@ -62,4 +63,24 @@ export const deleteNotification = async (id: NotificationId) => {
     console.error(message);
     throw { error: message };
   }
+};
+
+export const markNotificationsAsRead = async (notificationIds: string[]) => {
+  const { session } = await getUserAuth();
+  if (!session?.user.id) {
+    throw new Error('Unauthorized');
+  }
+
+  await db.notification.updateMany({
+    where: {
+      id: { in: notificationIds },
+      userId: session.user.id,
+    },
+    data: {
+      isRead: true,
+    },
+  });
+
+  revalidatePath('/notifications');
+  return { success: true };
 };
