@@ -251,7 +251,9 @@ export default function NotificationDataTable({
                   Copy notification ID
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem>View details</DropdownMenuItem>
+                <Link href={`/notifications/${notification.id}`}>
+                  <DropdownMenuItem>View details</DropdownMenuItem>
+                </Link>
                 <DropdownMenuItem>Mark as read</DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>

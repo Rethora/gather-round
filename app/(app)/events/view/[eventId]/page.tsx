@@ -9,6 +9,7 @@ import RsvpList from '@/components/rsvps/RsvpList';
 import RsvpStatusComponent from '@/components/rsvps/RsvpStatus';
 import EventCommentSection from '@/components/events/EventCommentSection';
 import PollingWrapper from '@/components/shared/PollingWrapper';
+import QueryParamCleaner from '@/components/shared/QueryParamCleaner';
 
 import { BackButton } from '@/components/shared/BackButton';
 import Loading from '@/app/loading';
@@ -38,10 +39,22 @@ const Event = async ({ id }: { id: string }) => {
   const capacityInfo = await getEventCapacity(id);
 
   if (!event) notFound();
+
+  // Determine the appropriate back path based on event type
+  let backPath = '/events/hosting'; // default fallback
+  if (session?.user.id === event.userId) {
+    backPath = '/events/hosting';
+  } else if (userRsvp) {
+    backPath = '/events/attending';
+  } else {
+    backPath = '/events/public';
+  }
+
   return (
     <Suspense fallback={<Loading />}>
+      <QueryParamCleaner />
       <div className="relative">
-        <BackButton currentResource="events" />
+        <BackButton currentResource="events" backPath={backPath} />
         <OptimisticEvent event={event} session={session!} rsvps={rsvps} />
       </div>
 

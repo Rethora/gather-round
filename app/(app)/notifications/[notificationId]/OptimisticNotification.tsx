@@ -24,14 +24,16 @@ export default function OptimisticNotification({
       </div>
       {optimisticNotification.eventId && (
         <div className="mt-4">
-          <StyledLink href={`/events/${optimisticNotification.eventId}`}>
+          <StyledLink href={`/events/view/${optimisticNotification.eventId}`}>
             View Event
           </StyledLink>
         </div>
       )}
       {optimisticNotification.commentId && (
         <div className="mt-4">
-          <StyledLink href={`/comments/${optimisticNotification.commentId}`}>
+          <StyledLink
+            href={`/events/view/${optimisticNotification.eventId}?commentId=${optimisticNotification.commentId}`}
+          >
             View Comment
           </StyledLink>
         </div>

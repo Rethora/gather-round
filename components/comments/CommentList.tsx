@@ -8,6 +8,7 @@ import { type Comment, CompleteComment } from '@/lib/db/schema/comments';
 import Modal from '@/components/shared/Modal';
 import { type Event, type EventId } from '@/lib/db/schema/events';
 import { useOptimisticComments } from '@/lib/hooks/useOptimisticComments';
+import { useScrollToComment } from '@/lib/hooks/useScrollToComment';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import CommentForm from './CommentForm';
@@ -106,12 +107,17 @@ const Comment = ({
   const userInitials =
     userName === 'You' ? 'Y' : userName.charAt(0).toUpperCase();
 
+  const { commentRef, commentId } = useScrollToComment();
+  const isTargetComment = commentId === comment.id;
+
   return (
     <div
+      ref={isTargetComment ? commentRef : undefined}
       className={cn(
-        'rounded-lg border bg-card p-4 shadow-sm',
+        'rounded-lg border bg-card p-4 shadow-sm transition-all duration-300',
         mutating ? 'opacity-30 animate-pulse' : '',
-        deleting ? 'border-destructive bg-destructive/5' : ''
+        deleting ? 'border-destructive bg-destructive/5' : '',
+        isTargetComment ? 'comment-highlight' : ''
       )}
     >
       <div className="flex items-start gap-3">

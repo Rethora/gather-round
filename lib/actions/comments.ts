@@ -48,6 +48,7 @@ export const createCommentAction = async (
     createNotificationAction({
       userId: eventHostId!.id,
       eventId: comment.eventId,
+      commentId: comment.id,
       type: NotificationType.COMMENT,
       title: NOTIFICATION_TITLES.NEW_COMMENT,
       message: `${session?.user.name ?? 'Someone'} has commented on your event: ${event!.title}`,

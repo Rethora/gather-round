@@ -17,14 +17,18 @@ export function useBackPath(currentResource: string) {
 
 export function BackButton({
   currentResource,
+  backPath,
 }: {
   /* must be in kebab-case */
   currentResource: string;
+  backPath?: string;
 }) {
-  const backPath = useBackPath(currentResource);
+  const calculatedBackPath = useBackPath(currentResource);
+  const finalBackPath = backPath || calculatedBackPath;
+
   return (
     <Button variant={'ghost'} asChild>
-      <Link href={backPath}>
+      <Link href={finalBackPath}>
         <ChevronLeftIcon />
       </Link>
     </Button>
